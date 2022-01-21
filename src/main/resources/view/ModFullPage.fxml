@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane fx:id="modFullPageAnchor" prefHeight="500.0" prefWidth="911.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ModFullPageController">
+   <children>
+      <HBox fx:id="modInfoHbox" layoutX="14.0" layoutY="14.0" prefHeight="92.0" prefWidth="885.0" spacing="20.0">
+         <children>
+            <ImageView fx:id="modImage" fitHeight="103.0" fitWidth="130.0" pickOnBounds="true" preserveRatio="true" />
+            <VBox prefHeight="103.0" prefWidth="723.0">
+               <children>
+                  <Label fx:id="modNameLabel" prefHeight="45.0" prefWidth="752.0" text="Label">
+                     <font>
+                        <Font size="20.0" />
+                     </font>
+                  </Label>
+                  <Label fx:id="modAuthorLabel" prefHeight="36.0" prefWidth="114.0" text="Label" />
+               </children>
+            </VBox>
+         </children>
+      </HBox>
+      <ScrollPane fx:id="modDependenciesScrollPane" layoutX="267.0" layoutY="140.0" prefHeight="300.0" prefWidth="615.0">
+         <content>
+            <VBox fx:id="modDependenciesVBox" prefHeight="292.0" prefWidth="602.0" />
+         </content>
+      </ScrollPane>
+      <HBox fx:id="modActionsHBox" layoutX="14.0" layoutY="445.0" prefHeight="45.0" prefWidth="868.0" />
+      <VBox fx:id="modDescriptionVBox" layoutX="14.0" layoutY="140.0" prefHeight="300.0" prefWidth="218.0" spacing="15.0" />
+   </children>
+</AnchorPane>

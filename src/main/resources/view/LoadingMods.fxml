@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane fx:id="loadingAnchorPane" prefHeight="213.0" prefWidth="397.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.LoadingModsController">
+   <children>
+      <VBox alignment="CENTER" layoutX="64.0" layoutY="7.0" prefHeight="200.0" prefWidth="269.0" spacing="20.0">
+         <children>
+            <Label fx:id="loadingLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="17.0" prefWidth="178.0" text="Loading..." />
+            <ProgressBar fx:id="loadingProgress" prefHeight="29.0" prefWidth="223.0" progress="0.0" />
+            <Label fx:id="manyModsLabel" prefHeight="66.0" prefWidth="205.0" />
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

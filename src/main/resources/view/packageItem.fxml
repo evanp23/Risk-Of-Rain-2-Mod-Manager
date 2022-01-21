@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane fx:id="itemAnchorPane" prefHeight="57.0" prefWidth="729.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.PackageItemController">
+   <children>
+      <HBox fx:id="modLabelOutBox" layoutX="1.0" prefHeight="57.0" prefWidth="723.0" AnchorPane.leftAnchor="1.0" AnchorPane.rightAnchor="5.0">
+         <children>
+            <Pane fx:id="modNamePane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="51.0">
+               <children>
+                  <Label fx:id="modNameLabel" layoutX="64.0" layoutY="6.0" text="Label">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <Label fx:id="modOwnerLabel" layoutX="64.0" layoutY="28.0" text="Label" />
+                  <ImageView fx:id="packageImage" fitHeight="41.0" fitWidth="48.0" layoutX="7.0" layoutY="8.0" pickOnBounds="true" preserveRatio="true" />
+               </children>
+            </Pane>
+            <HBox fx:id="seperatorHbox" alignment="CENTER_LEFT" minWidth="35.0" prefHeight="57.0" prefWidth="35.0" HBox.hgrow="ALWAYS">
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+               <padding>
+                  <Insets bottom="18.0" />
+               </padding></HBox>
+            <HBox fx:id="modInfoHbox" alignment="CENTER_RIGHT" prefHeight="52.0" prefWidth="408.0" spacing="20.0">
+               <HBox.margin>
+                  <Insets left="10.0" />
+               </HBox.margin>
+               <children>
+                  <Label fx:id="detailsChevron" alignment="TOP_CENTER" contentDisplay="CENTER" prefHeight="19.0" prefWidth="19.0" text="&gt;" textFill="#5a84d7">
+                     <font>
+                        <Font name="HoloLens MDL2 Assets" size="15.0" />
+                     </font>
+                  </Label>
+                  <ComboBox fx:id="versionBox" prefHeight="25.0" prefWidth="93.0" />
+                  <Button fx:id="downloadButton" mnemonicParsing="false" text="Download" />
+                  <ProgressBar fx:id="downloadProgress" prefHeight="18.0" prefWidth="73.0" progress="0.0" />
+               </children>
+            </HBox>
+         </children>
+      </HBox>
+      <AnchorPane fx:id="modInfoAnchor" layoutY="53.0" prefHeight="142.0" prefWidth="729.0" />
+   </children>
+</AnchorPane>

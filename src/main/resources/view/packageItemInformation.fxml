@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane fx:id="itemInfoAnchorPane" prefHeight="158.0" prefWidth="751.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.PackageItemInformationController">
+    <children>
+        <Line endX="745.2929077148438" endY="51.99998474121094" layoutY="11.0" startY="52.0" AnchorPane.bottomAnchor="0.5857696533203125" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="59.41423034667969" />
+        <HBox prefHeight="52.0" prefWidth="544.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+            <children>
+                <Pane fx:id="modNameInfoPane" minHeight="-Infinity" minWidth="-Infinity" prefHeight="51.0">
+                    <children>
+                        <Label fx:id="modNameInfoLabel" layoutX="64.0" layoutY="6.0" text="Label">
+                            <font>
+                                <Font size="18.0" />
+                            </font>
+                        </Label>
+                        <Label fx:id="modOwnerInfoLabel" layoutX="64.0" layoutY="28.0" text="Label" />
+                        <ImageView fx:id="packageInfoImage" fitHeight="45.0" fitWidth="55.0" layoutY="6.0" pickOnBounds="true" preserveRatio="true" />
+                    </children>
+                </Pane>
+                <HBox minWidth="200.0" prefHeight="52.0" prefWidth="89.0" HBox.hgrow="ALWAYS" />
+                <HBox fx:id="modInfoDetailsHbox" alignment="CENTER_RIGHT" prefHeight="52.0" prefWidth="430.0" spacing="20.0">
+                    <HBox.margin>
+                        <Insets left="10.0" />
+                    </HBox.margin>
+                    <children>
+                        <Button fx:id="downloadInfoButton" mnemonicParsing="false" text="Button" />
+                        <ImageView fx:id="expandDetailsInfo" fitHeight="23.0" fitWidth="22.0" pickOnBounds="true" preserveRatio="true">
+                            <HBox.margin>
+                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                            </HBox.margin>
+                        </ImageView>
+                    </children>
+                </HBox>
+            </children>
+        </HBox>
+    </children>
+</AnchorPane>

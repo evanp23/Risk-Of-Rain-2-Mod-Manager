@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane fx:id="chooseDirAnchorPane" prefHeight="198.0" prefWidth="412.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ChooseGameDirectoryController">
+   <children>
+      <Label alignment="CENTER" layoutX="95.0" layoutY="39.0" prefHeight="39.0" prefWidth="222.0" text="Choose Risk of Rain 2 Directory">
+         <font>
+            <Font size="15.0" />
+         </font>
+      </Label>
+      <TextField fx:id="gameDirectoryTextField" layoutX="58.0" layoutY="99.0" prefHeight="25.0" prefWidth="222.0" />
+      <Button fx:id="browseDirectoryButton" layoutX="288.0" layoutY="99.0" mnemonicParsing="false" text="Browse" />
+      <Button fx:id="submitDirectory" disable="true" layoutX="179.0" layoutY="172.0" mnemonicParsing="false" text="Submit" />
+   </children>
+</AnchorPane>

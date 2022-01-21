@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<AnchorPane fx:id="sceneAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="555.0" prefWidth="911.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.PackageListingController">
+   <children>
+      <Line fx:id="listingLine" endX="911.0" endY="54.0" startY="54.0" stroke="#6697f2" />
+      <HBox fx:id="pageNumBox" alignment="CENTER" layoutX="139.0" layoutY="509.0" prefHeight="47.0" prefWidth="911.0" spacing="20.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+         <children>
+            <Label fx:id="pageNumLabel" />
+         </children>
+      </HBox>
+      <HBox alignment="CENTER" layoutX="167.0" prefHeight="53.0" prefWidth="577.0" AnchorPane.leftAnchor="167.0" AnchorPane.rightAnchor="167.0">
+         <children>
+            <Label fx:id="installedModsLabel" alignment="CENTER" onMouseClicked="#installedLabelOnMouseClicked" onMouseEntered="#onMouseEnteredHand" onMouseExited="#onMouseExitedHand" prefHeight="55.0" prefWidth="139.0" text="Installed" HBox.hgrow="ALWAYS" />
+            <Label fx:id="allModsOnlineLabel" alignment="CENTER" onMouseClicked="#onlineLabelMouseClicked" onMouseEntered="#onMouseEnteredHand" onMouseExited="#onMouseExitedHand" prefHeight="39.0" prefWidth="138.0" text="Online" HBox.hgrow="ALWAYS" />
+         </children></HBox>
+      <ImageView fx:id="playButton" fitHeight="31.0" fitWidth="34.0" layoutX="860.0" layoutY="11.0" onMouseClicked="#playButtonOnMouseClicked" onMouseEntered="#onMouseEnteredHand" onMouseExited="#onMouseExitedHand" pickOnBounds="true" preserveRatio="true" AnchorPane.rightAnchor="17.0" AnchorPane.topAnchor="11.0" />
+      <AnchorPane fx:id="modListAnchorpane" layoutY="55.0" prefHeight="500.0" prefWidth="911.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="55.0">
+         <children>
+            <ScrollPane fx:id="packageScrollPane" hbarPolicy="NEVER" prefHeight="449.0" prefWidth="911.0" styleClass="edge-to-edge" AnchorPane.bottomAnchor="46.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <content>
+                  <VBox fx:id="packageBox" fillWidth="true" prefHeight="449.0" prefWidth="891.0">
+                     <effect>
+                        <ColorAdjust />
+                     </effect>
+                  </VBox>
+               </content>
+            </ScrollPane>
+            <Pagination fx:id="modPagination" prefHeight="500.0" prefWidth="911.0" stylesheets="@../css/style.css" />
+         </children>
+      </AnchorPane>
+      <ComboBox fx:id="searchComboBox" layoutX="14.0" layoutY="14.0" prefWidth="150.0" stylesheets="@../css/style.css" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="14.0" />
+      <ImageView fx:id="backButton" fitHeight="39.0" fitWidth="41.0" layoutX="6.0" layoutY="9.0" onMouseClicked="#onBackButtonClicked" onMouseEntered="#onMouseEnteredHand" onMouseExited="#onMouseExitedHand" pickOnBounds="true" preserveRatio="true" />
+   </children>
+</AnchorPane>
