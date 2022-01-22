@@ -43,7 +43,7 @@ public class Database {
 
         try(
             Statement stmt = conn.createStatement()){
-            
+
             stmt.execute(createStatement);
         }catch(SQLException s){
             s.printStackTrace();
@@ -59,8 +59,8 @@ public class Database {
         String insertStmt = "INSERT INTO installed_mods(id, name, owner, version, full_name) VALUES (NULL,?,?,?,?);";
 
         try(PreparedStatement ps = conn.prepareStatement(insertStmt)){
-            
-            
+
+
             ps.setString(1, modName);
             ps.setString(2, modOwner);
             ps.setString(3, version);

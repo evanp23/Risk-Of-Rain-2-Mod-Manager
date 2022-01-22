@@ -10,6 +10,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -73,6 +74,9 @@ public class PackageItemController implements Initializable {
     @FXML
     private Label detailsChevron;
 
+    private Button uninstallButton = new Button();
+    private Button updateButton = new Button();
+
     private Database db = new Database();
     private Connection conn = db.connect();
     private Map<String, Integer> gottenModPositions;
@@ -82,7 +86,7 @@ public class PackageItemController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
 
-        ModDownloader modDownloader = new ModDownloader(conn, db);
+
 
         downloadProgress.setMinWidth(90);
 
@@ -97,6 +101,7 @@ public class PackageItemController implements Initializable {
             protected Object call() throws Exception {
 
                 System.out.println("download thread");
+                ModDownloader modDownloader = new ModDownloader(conn, db);
 
                 String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
                 versionBox.setDisable(true);
@@ -285,12 +290,11 @@ public class PackageItemController implements Initializable {
         }
     }
 
-    private void setInstalledUI(ModPackage modPackage, List<ModPackage> installedPackages){
+    public void setInstalledUI(ModPackage modPackage, List<ModPackage> installedPackages){
         String installedVersion = modPackage.getInstalledPackageVersion().getVersion_number();
         String latestVersion = modPackage.getVersions().get(0).getVersion_number();
 
-        Button uninstallButton = new Button();
-        Button updateButton = new Button();
+
         updateButton.setMinWidth(90);
         updateButton.setStyle("-fx-background-color: #2e8c3b;");
         updateButton.setText(latestVersion);
@@ -306,14 +310,9 @@ public class PackageItemController implements Initializable {
             @Override
             public void handle(MouseEvent mouseEvent) {
                 System.out.println("in event");
-                ModDownloader modDownloader = new ModDownloader(conn, db);
 
-                for(ModPackage installedMod : installedPackages){
-                    if(installedMod.dependsOn(modPackage)){
-                        System.out.println(installedMod.getName() + " depends on " + modPackage.getName());
-                        filesToRemove.add(installedMod.getFull_name());
-                    }
-                }
+
+
             }
         });
 
@@ -350,5 +349,9 @@ public class PackageItemController implements Initializable {
         else{
             modInfoHbox.getChildren().add(2, uninstallButton);
         }
+    }
+
+    public Button getUninstallButton(){
+        return this.uninstallButton;
     }
 }

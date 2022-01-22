@@ -203,7 +203,7 @@ public class ModDownloader {
         }
     }
 
-    private void installBepInEx(PackageVersion packageVersion) throws IOException {
+    private void installBepInEx() throws IOException {
 
         File bepInTempFolder = new File(tempExtractions + "/BepInExPack/BepInExPack/");
 
@@ -256,7 +256,7 @@ public class ModDownloader {
             File thisFile = new File(tempExtractions + "/" + modName);
 
             if (modName.equals("BepInExPack")) {
-                installBepInEx(packageVersion);
+                installBepInEx();
             } else {
                 for (File file : thisFile.listFiles()) {
                     extractFile(file, zipFile, packageVersion);

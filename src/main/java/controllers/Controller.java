@@ -125,7 +125,7 @@ public abstract class Controller implements Initializable {
 //                itemAnchorPane = fxmlLoader.load();
 //
 //                packageItem = fxmlLoader.getController();
-//                packageItem.setData(modPackages.get(i));
+//                packageItem.showUninstallConfirmation(modPackages.get(i));
 //
 //
 //

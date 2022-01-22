@@ -14,7 +14,7 @@
             <Label fx:id="pageNumLabel" />
          </children>
       </HBox>
-      <HBox alignment="CENTER" layoutX="167.0" prefHeight="53.0" prefWidth="577.0" AnchorPane.leftAnchor="167.0" AnchorPane.rightAnchor="167.0">
+      <HBox fx:id="labelBox" alignment="CENTER" layoutX="167.0" prefHeight="53.0" prefWidth="577.0" AnchorPane.leftAnchor="167.0" AnchorPane.rightAnchor="167.0">
          <children>
             <Label fx:id="installedModsLabel" alignment="CENTER" onMouseClicked="#installedLabelOnMouseClicked" onMouseEntered="#onMouseEnteredHand" onMouseExited="#onMouseExitedHand" prefHeight="55.0" prefWidth="139.0" text="Installed" HBox.hgrow="ALWAYS" />
             <Label fx:id="allModsOnlineLabel" alignment="CENTER" onMouseClicked="#onlineLabelMouseClicked" onMouseEntered="#onMouseEnteredHand" onMouseExited="#onMouseExitedHand" prefHeight="39.0" prefWidth="138.0" text="Online" HBox.hgrow="ALWAYS" />
