@@ -2,6 +2,11 @@ package controllers;
 
 import database.Database;
 import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -79,6 +84,7 @@ public class PackageItemController implements Initializable {
 
         ModDownloader modDownloader = new ModDownloader(conn, db);
 
+        downloadProgress.setMinWidth(90);
 
         instLabel.setAlignment(Pos.CENTER);
 
@@ -90,28 +96,39 @@ public class PackageItemController implements Initializable {
             @Override
             protected Object call() throws Exception {
 
+                System.out.println("download thread");
+
                 String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
-                modDownloader.downloadMod(thisModPackage, selectedVersion, gottenModPositions, modPackages);
+                versionBox.setDisable(true);
 
-                Platform.runLater(new Runnable() {
+                modDownloader.progressProperty().addListener(new ChangeListener<Number>() {
                     @Override
-                    public void run() {
+                    public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                        if((double) t1==1.0){
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    instLabel.setText("Installed");
+                                    instLabel.setMinWidth(90);
+                                    modInfoHbox.getChildren().remove(2);
+                                    modInfoHbox.getChildren().add(2, instLabel);
+                                }
+                            });
 
-                        instLabel.setText("Installed");
-                        instLabel.setMinWidth(90);
-                        modInfoHbox.getChildren().remove(3);
-
+                            recentlyInstalledMods = modDownloader.getRecentlyInstalledMods();
+                            setRecentlyInstalled(recentlyInstalledMods);
+                        }
+                        updateProgress((double) t1, 1.0);
                     }
                 });
-                recentlyInstalledMods = modDownloader.getRecentlyInstalledMods();
-                setRecentlyInstalled(recentlyInstalledMods);
-                updateProgress(1, 1);
 
+                modDownloader.downloadMod(thisModPackage, selectedVersion, gottenModPositions, modPackages);
 
-                //TODO: SET THREAD PROGRESS TO FULL ONLY HERE
                 return null;
             }
         };
+
+        downloadProgress.progressProperty().bind(downloadTask.progressProperty());
 
         this.modDownloaderTask = downloadTask;
 
@@ -129,8 +146,8 @@ public class PackageItemController implements Initializable {
                 modInfoHbox.getChildren().add(3, downloadProgress);
                 modInfoHbox.getChildren().remove(downloadButton);
 
-                instLabel.setText("Installing");
-                modInfoHbox.getChildren().add(2, instLabel);
+//                instLabel.setText("Installing");
+//                modInfoHbox.getChildren().add(2, instLabel);
 
 
                 new Thread(modDownloaderTask).start();
@@ -269,33 +286,69 @@ public class PackageItemController implements Initializable {
     }
 
     private void setInstalledUI(ModPackage modPackage, List<ModPackage> installedPackages){
+        String installedVersion = modPackage.getInstalledPackageVersion().getVersion_number();
+        String latestVersion = modPackage.getVersions().get(0).getVersion_number();
+
+        Button uninstallButton = new Button();
+        Button updateButton = new Button();
+        updateButton.setMinWidth(90);
+        updateButton.setStyle("-fx-background-color: #2e8c3b;");
+        updateButton.setText(latestVersion);
+
+        uninstallButton.setMinWidth(90);
+        uninstallButton.setStyle("-fx-background-color: #c43323;");
+        uninstallButton.setText("Uninstall");
+        modInfoHbox.getChildren().remove(2);
+
         List<String> filesToRemove = new ArrayList<>();
+
+        uninstallButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                System.out.println("in event");
+                ModDownloader modDownloader = new ModDownloader(conn, db);
+
+                for(ModPackage installedMod : installedPackages){
+                    if(installedMod.dependsOn(modPackage)){
+                        System.out.println(installedMod.getName() + " depends on " + modPackage.getName());
+                        filesToRemove.add(installedMod.getFull_name());
+                    }
+                }
+            }
+        });
+
+
+
+
+
         versionBox.getSelectionModel().select(modPackage.getInstalledPackageVersion().getVersion_number());
         versionBox.setDisable(true);
         if(modPackage.needsUpdate()){
-            downloadButton.setStyle("-fx-background-color: #2B801A;");
-            downloadButton.setText(modPackage.getVersions().get(0).getVersion_number());
-        }
-        else{
-            downloadButton.setText("Uninstall");
-            downloadButton.setStyle("-fx-background-color: #c43323;");
+            versionBox.setDisable(false);
+            versionBox.getItems().clear();
+            versionBox.getItems().add(installedVersion);
+            versionBox.getItems().add(latestVersion);
 
-            downloadButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            modInfoHbox.getChildren().add(2, uninstallButton);
+
+            versionBox.getSelectionModel().select(0);
+            versionBox.valueProperty().addListener(new ChangeListener() {
                 @Override
-                public void handle(MouseEvent mouseEvent) {
-                    ModDownloader modDownloader = new ModDownloader(conn, db);
-
-                    for(ModPackage installedMod : installedPackages){
-                        if(installedMod.dependsOn(modPackage)){
-                            System.out.println(installedMod.getName() + " depends on " + modPackage.getName());
-                            filesToRemove.add(installedMod.getFull_name());
-                        }
+                public void changed(ObservableValue observableValue, Object o, Object t1) {
+                    if(t1.equals(latestVersion)){
+                        modInfoHbox.getChildren().remove(2);
+                        modInfoHbox.getChildren().add(2, updateButton);
                     }
-
-
+                    else if(t1.equals(installedVersion)){
+                        modInfoHbox.getChildren().remove(2);
+                        modInfoHbox.getChildren().add(2, uninstallButton);
+                    }
                 }
             });
 
+        }
+        else{
+            modInfoHbox.getChildren().add(2, uninstallButton);
         }
     }
 }

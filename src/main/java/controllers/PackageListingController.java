@@ -292,6 +292,7 @@ public class PackageListingController implements Initializable {
                                 public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
                                     if((double)t1 == 1.0){
                                         try {
+                                            System.out.println("setting recently installed");
                                             setRecentlyInstalled(finalPackageItemController.getRecentlyInstalledMods());
                                         }catch(SQLException s){
                                             s.printStackTrace();
@@ -419,25 +420,22 @@ public class PackageListingController implements Initializable {
     }
 
     public void installedLabelOnMouseClicked(){
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
+        Platform.runLater(() -> {
 
-                installedModsLabel.setDisable(true);
-                allModsOnlineLabel.setDisable(false);
+            installedModsLabel.setDisable(true);
+            allModsOnlineLabel.setDisable(false);
 
-                packageBox.getChildren().clear();
-                showingOnlineMods = false;
-                showingInstalledMods = true;
-                searchComboBox.setVisible(false);
-                int maxPages = (int) Math.ceil((double) installedVersionsSize / (double) packagesPerPage);
-                modPagination.setMaxPageIndicatorCount(maxPages);
+            packageBox.getChildren().clear();
+            showingOnlineMods = false;
+            showingInstalledMods = true;
+            searchComboBox.setVisible(false);
+            int maxPages = (int) Math.ceil((double) installedVersionsSize / (double) packagesPerPage);
+            modPagination.setMaxPageIndicatorCount(maxPages);
 
-                modPagination.setCurrentPageIndex(0);
+            modPagination.setCurrentPageIndex(0);
 
-                if (!sceneAnchorPane.getChildren().contains(modPagination)){
-                    showModListPage();
-                }
+            if (!sceneAnchorPane.getChildren().contains(modPagination)){
+                showModListPage();
             }
         });
     }
@@ -449,9 +447,10 @@ public class PackageListingController implements Initializable {
             File gameExe = new File(gameDir + "/Risk Of Rain 2.exe");
 
 
-            final ProcessBuilder pb = new ProcessBuilder(gameExe.getAbsolutePath());
+            ProcessBuilder pb;
+            pb = new ProcessBuilder(gameExe.getAbsolutePath());
             pb.directory(gameDir);
-            final Process p = pb.start();
+            pb.start();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -512,8 +511,7 @@ public class PackageListingController implements Initializable {
         String packageName = packageVersion.getName();
         String packageAuthor = packageVersion.getNamespace();
         int modPosition = gottenModPositions.get(packageAuthor + "-" + packageName);
-        ModPackage foundModPackage = modPackages.get(modPosition);
-        return foundModPackage;
+        return modPackages.get(modPosition);
     }
 
 }

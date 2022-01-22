@@ -1,5 +1,9 @@
 package service;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import mods.ModPackage;
 import mods.PackageVersion;
 import database.Database;
@@ -14,6 +18,7 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.*;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -30,6 +35,7 @@ public class ModDownloader {
     private Task downloadTask;
     private String tempZips = "TempZips";
     private String tempExtractions = "TempExtraction";
+    private DoubleProperty progressProperty = new SimpleDoubleProperty();
 
     public ModDownloader(Connection connection, Database db){
         this.dbConnection = connection;
@@ -60,33 +66,46 @@ public class ModDownloader {
                 }
             }
         }
-
     }
 
+    public DoubleProperty progressProperty(){
+        return this.progressProperty;
+    }
 
-    public void downloadMod(ModPackage modPackage, String version, Map<String, Integer> modsMap, List<ModPackage> modPackages) throws IOException, SQLException {
-        if(!db.modIsInstalled("BepInExPack", "bbepis", dbConnection) && !modPackage.getFull_name().equals("bbepis-BepInExPack")){
-            ModPackage bepInExPack = modPackages.get(modsMap.get("bbepis-BepInExPack"));
-            downloadMod(bepInExPack, "", modsMap, modPackages);
-            downloadMod(modPackage, version, modsMap, modPackages);
+    private void setProgress(Double progress){
+        this.progressProperty.set(progress);
+    }
+
+    public void downloadMod(ModPackage modPackage, String version, Map<String, Integer> modsMap, List<ModPackage> modPackages) throws SQLException, IOException {
+        List<PackageVersion> packageVersions = new ArrayList<>();
+
+        getDownloadUrls(modPackage, version, modsMap, modPackages, packageVersions);
+
+        int progressCount = 0;
+        for(PackageVersion packageVersion : packageVersions){
+            installAndExtract(new URL(packageVersion.getDownload_url()), packageVersion);
+            progressCount++;
+            setProgress(((double) progressCount / (double)packageVersions.size()));
+        }
+    }
+
+    public void getDownloadUrls(ModPackage modPackage, String version, Map<String, Integer> modsMap, List<ModPackage> modPackages, List<PackageVersion> packageVersions) throws IOException, SQLException {
+        ModPackage bepInExPack = modPackages.get(modsMap.get("bbepis-BepInExPack"));
+        if(!bepInExPack.isInstalled() && !modPackage.getFull_name().equals("bbepis-BepInExPack")){
+            getDownloadUrls(bepInExPack, "", modsMap, modPackages, packageVersions);
+            getDownloadUrls(modPackage, version, modsMap, modPackages, packageVersions);
         }
         else {
-            System.out.println("got " + modPackage.getName() + ": " + modPackage.isInstalled());
             if (!modPackage.isInstalled()) {
                 PackageVersion installVersion;
                 URL installURL;
                 if (version.equals("")) {
                     installVersion = modPackage.getVersions().get(0);
-                    System.out.println("got empty version");
                 } else {
                     installVersion = modPackage.getVersionsMap().get(version);
                 }
 
-                installURL = new URL(installVersion.getDownload_url());
-                System.out.println("url: " + installURL);
-
-                installAndExtract(installURL, installVersion);
-
+                packageVersions.add(installVersion);
                 modPackage.setInstalled(true);
                 modPackage.setInstalledPackageVersion(installVersion);
 
@@ -96,19 +115,14 @@ public class ModDownloader {
                         String parsedFullName = fullName.get(1) + "-" + fullName.get(0);
                         int dependencyPosition = -1;
                         if (modsMap.containsKey(parsedFullName)) {
-                            System.out.println(parsedFullName);
                             dependencyPosition = modsMap.get(parsedFullName);
                         } else {
-                            System.out.println("task failed");
                         }
                         ModPackage desiredModPackage = modPackages.get(dependencyPosition);
-                        downloadMod(desiredModPackage, "", modsMap, modPackages);
+                        getDownloadUrls(desiredModPackage, "", modsMap, modPackages, packageVersions);
                     }
                 }
-            } else {
-                System.out.println(modPackage.getName() + " is already installed.");
             }
-            System.out.println(modPackage.getName() + "*******************************************");
         }
     }
 
@@ -170,7 +184,6 @@ public class ModDownloader {
     private void extractFile(File file, ZipFile zipFile, PackageVersion packageVersion) throws IOException {
         String finalFolderName = packageVersion.getNamespace() + "-" + packageVersion.getName();
         ArrayList<String> possibleNames = new ArrayList<>(List.of("plugins", "config", "core", "patchers", "monomod", "cache"));
-        System.out.println("EXTRACTING: " + packageVersion.getFull_name());
         if (file.isDirectory()) {
             if (possibleNames.contains(file.getName())) {
                 zipFile.extractFile(file.getName() + "/", bepInDir.getAbsolutePath(), file.getName() + "/" + finalFolderName);
@@ -181,7 +194,7 @@ public class ModDownloader {
                 }
             }
             else{
-                zipFile.extractFile(file.getName() + "/", bepInPlug.getAbsolutePath());
+                zipFile.extractFile(file.getName() + "/", bepInPlug.getAbsolutePath() + "/" + finalFolderName);
             }
             FileUtils.deleteDirectory(file);
         } else {
@@ -226,7 +239,6 @@ public class ModDownloader {
 
     private void installAndExtract(URL url, PackageVersion packageVersion){
         try {
-            System.out.println("installandextract: " + packageVersion.getName());
             String modName = packageVersion.getName();
             String modNamespace = packageVersion.getNamespace();
             String modFullname = packageVersion.getFull_name();
@@ -236,7 +248,6 @@ public class ModDownloader {
             FileOutputStream fileOutputStream = new FileOutputStream(tempZip);
             fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
 
-            System.out.println("ZIP LOC: " + tempZip.getAbsolutePath());
 
             ZipFile zipFile = new ZipFile(tempZip);
 

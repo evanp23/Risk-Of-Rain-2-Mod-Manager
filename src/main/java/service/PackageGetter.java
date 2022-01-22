@@ -17,7 +17,7 @@ public class PackageGetter {
     Connection conn = db.connect();
 
     public List<ModPackage> loadPackages(Map<String, Integer> gottenModPositions) throws IOException, SQLException {
-        JSONArray root = JsonArrayReader.readJsonFromUrl("https://thunderstore.io/api/v1/package/");
+        JSONArray root = JsonReader.readJsonArrayFromUrl("https://thunderstore.io/api/v1/package/");
 
         for(int i = 0; i < root.length(); i++){
             JSONObject packObj = root.getJSONObject(i);
