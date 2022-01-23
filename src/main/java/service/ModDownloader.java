@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ModDownloader {
-    private Database db;
-    private Connection dbConnection;
     private File gamePath;
     private File bepInDir;
     private File bepInPlug;
@@ -37,9 +35,8 @@ public class ModDownloader {
     private String tempExtractions = "TempExtraction";
     private DoubleProperty progressProperty = new SimpleDoubleProperty();
 
-    public ModDownloader(Connection connection, Database db){
-        this.dbConnection = connection;
-        this.db = db;
+    public ModDownloader(){
+
         JsonReader jsonReader = new JsonReader();
         try {
             JSONObject jsonObject = jsonReader.readJsonFromFile("Config/Config.json");
@@ -52,17 +49,29 @@ public class ModDownloader {
     }
 
     public void removeModFiles(String modFileName, File file) throws IOException {
-        for(File inside : file.listFiles()){
-            if(inside.isDirectory()) {
-                if (modFileName.contains(inside.getName())) {
-                    System.out.println("deleting: " + inside);
-                    if (inside.isDirectory()) {
-                        FileUtils.deleteDirectory(inside);
-                    } else {
-                        FileUtils.fileDelete(inside.getAbsolutePath());
+        if(modFileName.equals("bbepis-BepInExPack")){
+            FileUtils.deleteDirectory(bepInDir);
+            List<String> possibleFileNames = new ArrayList<>(List.of("changelog.txt", "preloader", "README.md", "winhttp.dll"));
+            for(File file1 : gamePath.listFiles()){
+                for(String fileName : possibleFileNames){
+                    if(file1.getName().contains(fileName)){
+                        FileUtils.fileDelete(file1.getAbsolutePath());
                     }
-                } else {
-                    removeModFiles(modFileName, inside);
+                }
+            }
+        }
+        else {
+            for (File inside : file.listFiles()) {
+                if (inside.isDirectory()) {
+                    if (modFileName.contains(inside.getName())) {
+                        if (inside.isDirectory()) {
+                            FileUtils.deleteDirectory(inside);
+                        } else {
+                            FileUtils.fileDelete(inside.getAbsolutePath());
+                        }
+                    } else {
+                        removeModFiles(modFileName, inside);
+                    }
                 }
             }
         }
@@ -273,7 +282,7 @@ public class ModDownloader {
             deletableZip.delete();
             setRecentlyInstalledMod(packageVersion);
 
-            db.addMod(packageVersion, dbConnection);
+
         }catch (ZipException e) {
             e.printStackTrace();
         } catch (FileNotFoundException e) {
@@ -281,6 +290,10 @@ public class ModDownloader {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public File getBepInDir(){
+        return this.bepInDir;
     }
 
 //    private Task initializeDownloadTask(ModPackage modPackage, String version, Map<String, Integer> allModsMap, List<ModPackage> allModsList){

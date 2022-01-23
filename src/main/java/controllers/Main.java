@@ -24,6 +24,8 @@ public class Main extends Application {
         Connection conn = db.connect();
         db.createTable(conn);
 
+        conn.close();
+
         if(!(gameDir.equals(""))) {
             Parent root = FXMLLoader.load(getClass().getResource("/view/LoadingMods.fxml"));
             primaryStage.setTitle("Hello World");

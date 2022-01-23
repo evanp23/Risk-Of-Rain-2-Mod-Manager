@@ -9,6 +9,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -313,7 +314,6 @@ public class PackageListingController implements Initializable {
                                 public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
                                     if((double)t1 == 1.0){
                                         try {
-                                            System.out.println("setting recently installed");
                                             setRecentlyInstalled(finalPackageItemController.getRecentlyInstalledMods());
                                         }catch(SQLException s){
                                             s.printStackTrace();
@@ -358,6 +358,7 @@ public class PackageListingController implements Initializable {
     private void setRecentlyInstalled(List<PackageVersion> packageVersions) throws SQLException {
         if(packageVersions != null) {
             for (PackageVersion packageVersion : packageVersions) {
+                db.addMod(packageVersion, conn);
                 ModPackage recentlyInstalled = findModPackage(packageVersion);
                 if(!installedVersions.contains(packageVersion)) {
                      int installedInt = db.modIsInstalled(recentlyInstalled.getName(), recentlyInstalled.getOwner(),
@@ -385,7 +386,7 @@ public class PackageListingController implements Initializable {
                 for(int i = 0; i < storedOnlineMods.get(key).size(); i++){
                     ModPackage modPackage = storedOnlineMods.get(key).get(i);
                     PackageItemController packageItemController = storedOnlineControllers.get(key).get(i);
-                    if(modPackage.isInstalled()){
+                    if(modPackage.isInstalled() && packageVersions.contains(modPackage.getInstalledPackageVersion())){
                         packageItemController.setInstalledUI(modPackage, this.installedModPackages);
                     }
                 }
@@ -577,7 +578,7 @@ public class PackageListingController implements Initializable {
     }
 
     private void confirmUninstall(ModPackage modPackage){
-        ModDownloader modDownloader = new ModDownloader(conn, db);
+        ModDownloader modDownloader = new ModDownloader();
         List<String> filesToRemove = new ArrayList<>();
         List<ModPackage> modsToRemove = new ArrayList<>();
 
@@ -593,14 +594,38 @@ public class PackageListingController implements Initializable {
 
         setWarnConfirmUI(true);
 
+        Task removeTask = new Task() {
+            @Override
+            protected Object call() throws Exception {
+                modsToRemove.add(modPackage);
+                for(ModPackage uninstall : modsToRemove){
+                    try {
+                        modDownloader.removeModFiles(uninstall.getFull_name(), modDownloader.getBepInDir());
+                        uninstall.setInstalled(false);
+                        uninstall.setNeedsUpdate(false);
+                        uninstall.setInstalledPackageVersion(null);
+                        System.out.println("removing: " + uninstall.getFull_name());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return null;
+            }
+        };
+
         confirmWarnDialogController.getConfirmationButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-                modsToRemove.add(modPackage);
-                for(ModPackage uninstall : modsToRemove){
-                    System.out.println("uninstalling " + uninstall);
-                    setWarnConfirmUI(false);
-                }
+                new Thread(removeTask).start();
+                removeTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+                    @Override
+                    public void handle(WorkerStateEvent workerStateEvent) {
+                        for(ModPackage removeMod : modsToRemove){
+                            db.removeMod(removeMod, conn);
+                        }
+                        setWarnConfirmUI(false);
+                    }
+                });
             }
         });
 

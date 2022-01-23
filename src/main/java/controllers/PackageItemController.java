@@ -1,6 +1,6 @@
 package controllers;
 
-import database.Database;
+
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -77,8 +77,6 @@ public class PackageItemController implements Initializable {
     private Button uninstallButton = new Button();
     private Button updateButton = new Button();
 
-    private Database db = new Database();
-    private Connection conn = db.connect();
     private Map<String, Integer> gottenModPositions;
     List<ModPackage> modPackages;
 
@@ -100,8 +98,8 @@ public class PackageItemController implements Initializable {
             @Override
             protected Object call() throws Exception {
 
-                System.out.println("download thread");
-                ModDownloader modDownloader = new ModDownloader(conn, db);
+                System.out.println("download thread: " + thisModPackage.getName());
+                ModDownloader modDownloader = new ModDownloader();
 
                 String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
                 versionBox.setDisable(true);

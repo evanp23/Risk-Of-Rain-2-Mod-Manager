@@ -43,6 +43,7 @@ public class ConfirmWarnDialogController implements Initializable {
     }
 
     public void showUninstallConfirmation(ModPackage packageToRemove, List<ModPackage> dependents) {
+        dependentsBox.getChildren().clear();
         modNameLabel.setText(packageToRemove.getName());
 
         if (!dependents.isEmpty()) {
