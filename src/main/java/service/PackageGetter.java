@@ -74,6 +74,7 @@ public class PackageGetter {
 
 
 
+
                 PackageVersion onePackageVersion = new PackageVersion(pkgOwner, vName,
                         vFullName,
                         vDescription,
@@ -89,35 +90,19 @@ public class PackageGetter {
                         vFileSize);
                 allVersions.add(onePackageVersion);
 
+
                 versionsMap.put(vNum, onePackageVersion);
             }
 
-            boolean isInstalled;
-            int installUpdate = db.modIsInstalled(pkgName, pkgOwner, allVersions.get(0).getVersion_number(), conn);
-            boolean needsUpdate;
-            if(installUpdate == 0){
-                needsUpdate = false;
-                isInstalled = true;
-            }
-            else if(installUpdate == 1){
-                needsUpdate = true;
-                isInstalled = true;
-            }
-            else{
-                needsUpdate = false;
-                isInstalled = false;
-            }
-
-            String installedVersion = null;
+            PackageVersion installedPackageVersion = new PackageVersion();
+            boolean isInstalled = db.modIsInstalled(pkgName, pkgOwner, conn);
+            String installedVersion;
             if(isInstalled){
                 installedVersion = db.getInstalledVersion(pkgOwner, pkgName, conn);
-            }
-
-            PackageVersion installedPackageVersion = new PackageVersion();
-
-            for(PackageVersion packageVersion : allVersions){
-                if(packageVersion.getVersion_number().equals(installedVersion)){
-                    installedPackageVersion = packageVersion;
+                for(PackageVersion packageVersion : allVersions){
+                    if(packageVersion.getVersion_number().equals(installedVersion)){
+                        installedPackageVersion = packageVersion;
+                    }
                 }
             }
 
@@ -135,7 +120,6 @@ public class PackageGetter {
                     allCategories,
                     allVersions,
                     isInstalled,
-                    needsUpdate,
                     installedPackageVersion,
                     versionsMap);
             allPackages.add(oneModPackage);

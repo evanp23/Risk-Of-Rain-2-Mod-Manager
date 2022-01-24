@@ -6,22 +6,26 @@
 
 <AnchorPane fx:id="confirmationAnchor" prefHeight="281.0" prefWidth="443.0" style="-fx-background-color: #6ac2e6; -fx-background-radius: 10;" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.ConfirmWarnDialogController">
    <children>
-      <Label fx:id="confirmationLabel" alignment="CENTER" layoutX="108.0" layoutY="40.0" prefHeight="31.0" prefWidth="228.0" text="Removing this mod will also remove">
+      <Label fx:id="confirmationLabel" alignment="CENTER" layoutX="108.0" layoutY="40.0" prefHeight="31.0" prefWidth="228.0" AnchorPane.topAnchor="40.0">
          <font>
             <Font size="14.0" />
          </font>
       </Label>
-      <Button fx:id="confirmationButton" layoutX="314.0" layoutY="242.0" mnemonicParsing="false" text="Confirm Removal" />
       <ScrollPane fx:id="dependentScrollPane" layoutX="108.0" layoutY="71.0" prefHeight="151.0" prefWidth="228.0">
          <content>
             <VBox fx:id="dependentsBox" prefHeight="141.0" prefWidth="215.0" />
          </content>
       </ScrollPane>
-      <Label fx:id="modNameLabel" alignment="CENTER" layoutX="108.0" layoutY="6.0" prefHeight="31.0" prefWidth="228.0" text="Label">
+      <Label fx:id="modNameLabel" alignment="CENTER" layoutX="108.0" layoutY="6.0" prefHeight="31.0" prefWidth="228.0" text="Label" AnchorPane.topAnchor="6.0">
          <font>
             <Font size="16.0" />
          </font>
       </Label>
-      <Button fx:id="cancelButton" layoutX="206.0" layoutY="242.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="99.0" text="Cancel" />
+      <HBox fx:id="buttonHBox" alignment="CENTER" layoutY="236.0" prefHeight="25.0" prefWidth="443.0" spacing="10.0" AnchorPane.bottomAnchor="20.0">
+         <children>
+            <Button fx:id="cancelButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="99.0" text="Cancel" />
+            <Button fx:id="confirmationButton" mnemonicParsing="false" text="Confirm Removal" />
+         </children>
+      </HBox>
    </children>
 </AnchorPane>

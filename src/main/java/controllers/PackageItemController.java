@@ -14,6 +14,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -78,15 +79,15 @@ public class PackageItemController implements Initializable {
     private Button updateButton = new Button();
 
     private Map<String, Integer> gottenModPositions;
-    List<ModPackage> modPackages;
+    private List<ModPackage> modPackages;
+
+    private List<ModPackage> installedModPackages;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-
-
-
         downloadProgress.setMinWidth(90);
+        modInfoHbox.getChildren().remove(downloadProgress);
 
         instLabel.setAlignment(Pos.CENTER);
 
@@ -94,46 +95,17 @@ public class PackageItemController implements Initializable {
         showingInfoAnchor = false;
         itemAnchorPane.setMinHeight(57);
 
-        Task downloadTask = new Task() {
-            @Override
-            protected Object call() throws Exception {
+        downloadButton.setMinWidth(90);
+        downloadButton.setText("Download");
 
-                System.out.println("download thread: " + thisModPackage.getName());
-                ModDownloader modDownloader = new ModDownloader();
+        updateButton.setMinWidth(90);
+        updateButton.setStyle("-fx-background-color: #2e8c3b;");
 
-                String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
-                versionBox.setDisable(true);
 
-                modDownloader.progressProperty().addListener(new ChangeListener<Number>() {
-                    @Override
-                    public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                        if((double) t1==1.0){
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    instLabel.setText("Installed");
-                                    instLabel.setMinWidth(90);
-                                    modInfoHbox.getChildren().remove(2);
-                                    modInfoHbox.getChildren().add(2, instLabel);
-                                }
-                            });
+        uninstallButton.setMinWidth(90);
+        uninstallButton.setStyle("-fx-background-color: #c43323;");
+        uninstallButton.setText("Uninstall");
 
-                            recentlyInstalledMods = modDownloader.getRecentlyInstalledMods();
-                            setRecentlyInstalled(recentlyInstalledMods);
-                        }
-                        updateProgress((double) t1, 1.0);
-                    }
-                });
-
-                modDownloader.downloadMod(thisModPackage, selectedVersion, gottenModPositions, modPackages);
-
-                return null;
-            }
-        };
-
-        downloadProgress.progressProperty().bind(downloadTask.progressProperty());
-
-        this.modDownloaderTask = downloadTask;
 
         downloadButton.setOnMouseEntered(new EventHandler<MouseEvent>() {
             @Override
@@ -145,15 +117,7 @@ public class PackageItemController implements Initializable {
         downloadButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-
-                modInfoHbox.getChildren().add(3, downloadProgress);
-                modInfoHbox.getChildren().remove(downloadButton);
-
-//                instLabel.setText("Installing");
-//                modInfoHbox.getChildren().add(2, instLabel);
-
-
-                new Thread(modDownloaderTask).start();
+                startDownloadTask(false);
             }
         });
 
@@ -179,29 +143,11 @@ public class PackageItemController implements Initializable {
         return this.recentlyInstalledMods;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public Button getDownloadButton(){
-        return this.downloadButton;
-    }
-
-    public void setData(ModPackage modPackage, List<ModPackage> installedModPackages, Map<String, Integer> allModsMap, List<ModPackage> allOnlineMods) throws IOException, SQLException {
+    public void setData(ModPackage modPackage, List<ModPackage> installedModPackages, Map<String, Integer> allModsMap, List<ModPackage> allOnlineMods, boolean installed) throws IOException, SQLException {
         this.gottenModPositions = allModsMap;
         this.modPackages = allOnlineMods;
+        this.installedModPackages = installedModPackages;
+        this.modDownloaderTask = initializeDownloadTask();
 
         Label descLabel = new Label();
         descLabel.setMaxWidth(200);
@@ -218,45 +164,20 @@ public class PackageItemController implements Initializable {
             } else {
                 modNameLabel.setText(modPackage.getName());
             }
-
-            modInfoHbox.getChildren().remove(3);
-
-            List<String> versionNums = new ArrayList<>();
-
-            for (PackageVersion packageVersion : modPackage.getVersions()) {
-                versionNums.add(packageVersion.getVersion_number());
-            }
-
-
-            versionBox.getItems().addAll(versionNums);
-            versionBox.getSelectionModel().selectFirst();
-
             descLabel.setText(thisModPackage.getVersions().get(0).getDescription());
             modInfoAnchor.getChildren().add(descLabel);
 
-            if(modPackage.isInstalled()) {
-                setInstalledUI(modPackage, installedModPackages);
+
+            if(installed){
+                setInstalledUI(thisModPackage);
             }
-
-            downloadButton.setMinWidth(90);
-
-            Task task = new Task() {
-                @Override
-                protected Object call() throws Exception {
-                    Image iconImage = new Image(modPackage.getVersions().get(0).getIcon());
-
-                    Platform.runLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            packageImage.setImage(iconImage);
-                        }
-                    });
-                    return null;
-                }
-            };
-            new Thread(task).start();
-
+            else{
+                setUninstalledUI(thisModPackage);
+            }
         }
+
+        getImage();
+
         itemAnchorPane.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -264,11 +185,6 @@ public class PackageItemController implements Initializable {
             }
         });
         downloadButton.setFocusTraversable(false);
-    }
-
-    public String returnData(){
-        String str = "Name: " + modNameLabel.getText() + ", Owner: " + modOwnerLabel.getText();
-        return str;
     }
 
     public void startAnimation(){
@@ -288,68 +204,131 @@ public class PackageItemController implements Initializable {
         }
     }
 
-    public void setInstalledUI(ModPackage modPackage, List<ModPackage> installedPackages){
-        String installedVersion = modPackage.getInstalledPackageVersion().getVersion_number();
-        String latestVersion = modPackage.getVersions().get(0).getVersion_number();
+    public void setInstalledUI(ModPackage modPackage){
+        updateButton.setText(modPackage.getInstalledPackageVersion().getVersion_number());
+        showNewButton(uninstallButton);
+        populateVersionBox(modPackage, true);
+    }
 
+    public void setUninstalledUI(ModPackage modPackage){
+        showNewButton(downloadButton);
+        populateVersionBox(modPackage, false);
+    }
 
-        updateButton.setMinWidth(90);
-        updateButton.setStyle("-fx-background-color: #2e8c3b;");
-        updateButton.setText(latestVersion);
+    public void refreshHBox(ModPackage modPackage, boolean installed) throws SQLException, IOException {
+        this.setData(modPackage, installedModPackages, gottenModPositions, modPackages, installed);
+    }
 
-        uninstallButton.setMinWidth(90);
-        uninstallButton.setStyle("-fx-background-color: #c43323;");
-        uninstallButton.setText("Uninstall");
-        modInfoHbox.getChildren().remove(2);
+    public void startDownloadTask(boolean alreadyInstalled){
+        showNewButton(downloadProgress);
+        downloadProgress.progressProperty().bind(modDownloaderTask.progressProperty());
+        new Thread(modDownloaderTask).start();
+    }
 
-        List<String> filesToRemove = new ArrayList<>();
-
-        uninstallButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
+    private void getImage(){
+        Task task = new Task() {
             @Override
-            public void handle(MouseEvent mouseEvent) {
-                System.out.println("in event");
+            protected Object call() throws Exception {
+                Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
 
-
-
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        packageImage.setImage(iconImage);
+                    }
+                });
+                return null;
             }
-        });
+        };
+        new Thread(task).start();
+    }
 
+    public void populateVersionBox(ModPackage modPackage, boolean installed){
+        versionBox.getItems().clear();
+        List<String> versionNums = new ArrayList<>();
 
+        if(installed) {
+            String installedVersion = modPackage.getInstalledPackageVersion().getVersion_number();
+            if(modPackage.needsUpdate()) {
 
+                String latestVersion = modPackage.getVersions().get(0).getVersion_number();
+                versionNums.add(installedVersion);
+                versionNums.add(latestVersion);
 
-
-        versionBox.getSelectionModel().select(modPackage.getInstalledPackageVersion().getVersion_number());
-        versionBox.setDisable(true);
-        if(modPackage.needsUpdate()){
-            versionBox.setDisable(false);
-            versionBox.getItems().clear();
-            versionBox.getItems().add(installedVersion);
-            versionBox.getItems().add(latestVersion);
-
-            modInfoHbox.getChildren().add(2, uninstallButton);
-
-            versionBox.getSelectionModel().select(0);
-            versionBox.valueProperty().addListener(new ChangeListener() {
-                @Override
-                public void changed(ObservableValue observableValue, Object o, Object t1) {
-                    if(t1.equals(latestVersion)){
-                        modInfoHbox.getChildren().remove(2);
-                        modInfoHbox.getChildren().add(2, updateButton);
+                versionBox.valueProperty().addListener(new ChangeListener() {
+                    @Override
+                    public void changed(ObservableValue observableValue, Object o, Object t1) {
+                        if (t1.equals(latestVersion)) {
+                            showNewButton(updateButton);
+                        } else if (t1.equals(installedVersion)) {
+                            showNewButton(uninstallButton);
+                        }
                     }
-                    else if(t1.equals(installedVersion)){
-                        modInfoHbox.getChildren().remove(2);
-                        modInfoHbox.getChildren().add(2, uninstallButton);
-                    }
-                }
-            });
-
+                });
+            }
+            else{
+                versionNums.add(installedVersion);
+                versionBox.setDisable(true);
+            }
         }
         else{
-            modInfoHbox.getChildren().add(2, uninstallButton);
+            for (PackageVersion packageVersion : modPackage.getVersions()) {
+                versionNums.add(packageVersion.getVersion_number());
+            }
         }
+
+        versionBox.getItems().addAll(versionNums);
+        versionBox.getSelectionModel().select(0);
+    }
+
+    public void showNewButton(Node newButton){
+        modInfoHbox.getChildren().remove(2);
+        modInfoHbox.getChildren().add(newButton);
+    }
+
+    private Task initializeDownloadTask(){
+        Task downloadTask = new Task() {
+            @Override
+            protected Object call() throws Exception {
+
+                System.out.println("download thread: " + thisModPackage.getName());
+                ModDownloader modDownloader = new ModDownloader();
+
+                String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
+                versionBox.setDisable(true);
+
+
+
+                modDownloader.progressProperty().addListener(new ChangeListener<Number>() {
+                    @Override
+                    public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                        if((double) t1==1.0){
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    showNewButton(uninstallButton);
+                                }
+                            });
+
+                            recentlyInstalledMods = modDownloader.getRecentlyInstalledMods();
+                            setRecentlyInstalled(recentlyInstalledMods);
+                        }
+                        updateProgress((double) t1, 1.0);
+                    }
+                });
+                modDownloader.downloadMod(thisModPackage, selectedVersion, gottenModPositions, modPackages);
+
+
+                return null;
+            }
+        };
+        downloadProgress.progressProperty().bind(downloadTask.progressProperty());
+        return downloadTask;
     }
 
     public Button getUninstallButton(){
         return this.uninstallButton;
     }
+    public Button getUpdateButton(){return this.updateButton;}
+
 }

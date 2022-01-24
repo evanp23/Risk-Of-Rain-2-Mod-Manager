@@ -1,5 +1,9 @@
 package mods;
 
+import controllers.PackageItemController;
+import javafx.scene.Node;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+
 import java.util.List;
 import java.util.Map;
 
@@ -18,9 +22,10 @@ public class ModPackage {
     private List<String> categories;
     private List<PackageVersion> versions;
     private boolean installed;
-    private boolean needsUpdate;
     private PackageVersion installedPackageVersion;
     private Map<String, PackageVersion> versionsMap;
+    private PackageItemController storedController;
+    private Node storedPackageItemNode;
 
     public ModPackage(){
 
@@ -29,7 +34,7 @@ public class ModPackage {
     public ModPackage(String name, String full_name, String owner, String package_url, String date_created,
                       String date_updated, String uuid4, int rating_score, boolean is_pinned, boolean is_deprecated,
                       boolean has_nsfw_content, List<String> categories, List<PackageVersion> versions, boolean installed,
-                      boolean needsUpdate, PackageVersion installedPackageVersion, Map<String, PackageVersion> versionsMap) {
+                      PackageVersion installedPackageVersion, Map<String, PackageVersion> versionsMap) {
         this.name = name;
         this.full_name = full_name;
         this.owner = owner;
@@ -44,9 +49,10 @@ public class ModPackage {
         this.categories = categories;
         this.versions = versions;
         this.installed = installed;
-        this.needsUpdate = needsUpdate;
         this.installedPackageVersion = installedPackageVersion;
         this.versionsMap = versionsMap;
+        this.storedController = null;
+        this.storedPackageItemNode = null;
     }
 
     public String getName() {
@@ -161,14 +167,6 @@ public class ModPackage {
         this.installed = installed;
     }
 
-    public boolean needsUpdate(){
-        return this.needsUpdate;
-    }
-
-    public void setNeedsUpdate(boolean needsUpdate){
-        this.needsUpdate = needsUpdate;
-    }
-
     public PackageVersion getInstalledPackageVersion(){
         return this.installedPackageVersion;
     }
@@ -188,8 +186,35 @@ public class ModPackage {
         return false;
     }
 
+    public boolean needsUpdate(){
+        DefaultArtifactVersion installed = new DefaultArtifactVersion(installedPackageVersion.getVersion_number());
+        DefaultArtifactVersion latest = new DefaultArtifactVersion(this.versions.get(0).getVersion_number());
+
+        if(latest.compareTo(installed) > 0){
+            return true;
+        }
+        return false;
+    }
+
+
     public Map<String, PackageVersion> getVersionsMap(){
         return this.versionsMap;
+    }
+
+    public void setStoredController(PackageItemController storedController) {
+        this.storedController = storedController;
+    }
+
+    public void setStoredPackageItemNode(Node storedPackageItemNode) {
+        this.storedPackageItemNode = storedPackageItemNode;
+    }
+
+    public Node getStoredPackageItemNode() {
+        return storedPackageItemNode;
+    }
+
+    public PackageItemController getStoredController() {
+        return storedController;
     }
 
     @Override

@@ -26,13 +26,13 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="565e5398-72f4-44c4-943f-f1e739452e57">
-        <schema name="main" object-types="table, column" />
+        <schema name="main" object-types="table, view, column" />
       </connection>
     </loaded-nodes>
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="565e5398-72f4-44c4-943f-f1e739452e57">
-      <console name="Connection" type="STANDARD" schema="main" session="Main"><![CDATA[delete from installed_mods where id > 0;]]></console>
+      <console name="Connection" type="STANDARD" schema="main" session="Main"><![CDATA[DELETE from installed_mods where id > 0;]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">

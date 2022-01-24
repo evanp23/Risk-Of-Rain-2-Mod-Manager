@@ -117,6 +117,7 @@ public class ModDownloader {
                 packageVersions.add(installVersion);
                 modPackage.setInstalled(true);
                 modPackage.setInstalledPackageVersion(installVersion);
+                System.out.println("setting " + modPackage.getName() + ":" + installVersion.getFull_name());
 
                 if (installVersion.hasDependencies()) {
                     for (String dependency : installVersion.getDependencies()) {
