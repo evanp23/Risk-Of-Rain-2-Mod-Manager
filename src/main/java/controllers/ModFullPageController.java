@@ -22,22 +22,17 @@ import java.util.List;
 public class ModFullPageController implements Initializable {
     @FXML
     private Label modNameLabel;
-
     @FXML
     private Label modAuthorLabel;
-
     @FXML
     private ImageView modImage;
-
     @FXML
     private VBox modDescriptionVBox;
-
     private Label descriptionLabel;
     private Label latestVersionLabel;
     private Label lastUpdateLabel;
     private Label publishedLabel;
     private List<Label> labelList = new ArrayList<>();
-
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -81,23 +76,16 @@ public class ModFullPageController implements Initializable {
         Label updated = new Label(finalDates.get(2) + " - " + finalDates.get(3));
         textList.add(updated);
 
-
-
         modDescriptionVBox.getChildren().clear();
-
 
         for(int i = 0; i < textList.size(); i++){
             VBox insideBox = new VBox();
-
             labelList.get(i).setStyle("-fx-font-weight: bold");
             textList.get(i).setWrapText(true);
             insideBox.getChildren().add(labelList.get(i));
             insideBox.getChildren().add(textList.get(i));
             modDescriptionVBox.getChildren().add(insideBox);
         }
-
-
-
     }
 
     private List<String> createDates(ModPackage modPackage) throws ParseException {

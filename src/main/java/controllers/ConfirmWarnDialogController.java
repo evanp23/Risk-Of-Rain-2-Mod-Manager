@@ -19,36 +19,26 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class ConfirmWarnDialogController implements Initializable {
-
     @FXML
     private AnchorPane confirmationAnchor;
-
     @FXML
     private Label confirmationLabel;
-
     @FXML
     private ScrollPane dependentScrollPane;
-
     @FXML
     private Button confirmationButton;
-
     @FXML
     private VBox dependentsBox;
-
     @FXML
     private Label modNameLabel;
-
     @FXML
     private Button cancelButton;
-
     @FXML
     private HBox buttonHBox;
-
     private Button updateAllButton;
     private double emptyHeight = 180.0;
     private double fullHeight = 280;
     private double width = 440;
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         updateAllButton = new Button();
@@ -98,11 +88,6 @@ public class ConfirmWarnDialogController implements Initializable {
             confirmationAnchor.setLayoutX((parentWidth / 2) - width / 2);
             confirmationAnchor.setLayoutY((parentHeight / 2) - emptyHeight / 2);
         }
-
-
-        System.out.println("dd " + parentHeight + ":" + width + ": " + confirmationAnchor.getHeight() + ":" + confirmationAnchor.getWidth());
-
-
     }
 
     public void showUpdateConfirmation(ModPackage packageToUpdate, List<ModPackage> dependenciesNeedingUpdate){
@@ -142,18 +127,14 @@ public class ConfirmWarnDialogController implements Initializable {
             confirmationAnchor.setLayoutX((parentWidth / 2) - width / 2);
             confirmationAnchor.setLayoutY((parentHeight / 2) - emptyHeight / 2);
         }
-
-
     }
 
     public Button getConfirmationButton(){
         return this.confirmationButton;
     }
-
     public Button getCancelButton(){
         return this.cancelButton;
     }
-
     public Button getUpdateAllButton(){
         return this.updateAllButton;
     }

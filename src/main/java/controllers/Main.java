@@ -23,7 +23,6 @@ public class Main extends Application {
         Database db = new Database();
         Connection conn = db.connect();
         db.createTable(conn);
-
         conn.close();
 
         if(!(gameDir.equals(""))) {
@@ -31,9 +30,6 @@ public class Main extends Application {
             primaryStage.setTitle("Hello World");
             primaryStage.setScene(new Scene(root));
             primaryStage.show();
-
-
-
         }
         else{
             Parent root = FXMLLoader.load(getClass().getResource("/view/ChooseGameDirectory.fxml"));
@@ -41,11 +37,7 @@ public class Main extends Application {
             primaryStage.setScene(new Scene(root));
             primaryStage.show();
         }
-
-
     }
-
-
     public static void main(String[] args) {
         launch(args);
     }

@@ -25,48 +25,34 @@ import java.util.ResourceBundle;
 public class ChooseGameDirectoryController implements Initializable {
     @FXML
     private Button browseDirectoryButton;
-
     @FXML
     private TextField gameDirectoryTextField;
-
     @FXML
     private AnchorPane chooseDirAnchorPane;
-
     @FXML
     private Button submitDirectory;
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         browseDirectoryButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-
-                //final FileChooser gameFileChooser = new FileChooser();
                 final DirectoryChooser gameDirChooser = new DirectoryChooser();
-
                 Stage stg = (Stage) chooseDirAnchorPane.getScene().getWindow();
-
                 File rorFilePath = gameDirChooser.showDialog(stg);
-
                 if(rorFilePath != null) {
                     JSONObject jsonConfigObj = null;
+
                     try {
                         jsonConfigObj = JsonReader.readJsonFromFile("Config/Config.json");
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    jsonConfigObj.put("directory", rorFilePath.getAbsolutePath());
-
-                    try {
+                        jsonConfigObj.put("directory", rorFilePath.getAbsolutePath());
                         JsonWriter jsonWriter = new JsonWriter();
                         jsonWriter.writeJsonToFile("Config/Config.json", jsonConfigObj);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
                     submitDirectory.setDisable(false);
                     gameDirectoryTextField.setText(rorFilePath.getAbsolutePath());
-
                     submitDirectory.setOnMouseClicked(new EventHandler<MouseEvent>() {
                         @Override
                         public void handle(MouseEvent mouseEvent) {
@@ -81,13 +67,8 @@ public class ChooseGameDirectoryController implements Initializable {
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-
-
                         }
                     });
-                }
-                else{
-
                 }
             }
         });

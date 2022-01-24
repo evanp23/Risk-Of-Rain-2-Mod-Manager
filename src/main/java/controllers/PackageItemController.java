@@ -2,15 +2,11 @@ package controllers;
 
 
 import javafx.application.Platform;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -30,11 +26,38 @@ import service.ModDownloader;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 
 public class PackageItemController implements Initializable {
+    @FXML
+    private Label modOwnerLabel;
+    @FXML
+    private Label modNameLabel;
+    @FXML
+    private ImageView packageImage;
+    @FXML
+    private HBox modInfoHbox;
+    @FXML
+    private AnchorPane itemAnchorPane;
+    @FXML
+    private Button downloadButton;
+    @FXML
+    private ComboBox versionBox;
+    @FXML
+    private ProgressBar downloadProgress;
+    @FXML
+    private Label instLabel = new Label();
+    @FXML
+    private AnchorPane modInfoAnchor;
+    @FXML
+    private Label detailsChevron;
+
+    private Button uninstallButton = new Button();
+    private Button updateButton = new Button();
+    private Map<String, Integer> gottenModPositions;
+    private List<ModPackage> modPackages;
+    private List<ModPackage> installedModPackages;
     private String name;
     private String author;
     private ModPackage thisModPackage;
@@ -42,50 +65,8 @@ public class PackageItemController implements Initializable {
     private Task modDownloaderTask;
     private boolean showingInfoAnchor = false;
 
-    @FXML
-    private Label modOwnerLabel;
-
-    @FXML
-    private Label modNameLabel;
-
-    @FXML
-    private ImageView packageImage;
-
-    @FXML
-    private HBox modInfoHbox;
-
-    @FXML
-    private AnchorPane itemAnchorPane;
-
-    @FXML
-    private Button downloadButton;
-
-    @FXML
-    private ComboBox versionBox;
-
-    @FXML
-    private ProgressBar downloadProgress;
-
-    @FXML
-    private Label instLabel = new Label();
-
-    @FXML
-    private AnchorPane modInfoAnchor;
-
-    @FXML
-    private Label detailsChevron;
-
-    private Button uninstallButton = new Button();
-    private Button updateButton = new Button();
-
-    private Map<String, Integer> gottenModPositions;
-    private List<ModPackage> modPackages;
-
-    private List<ModPackage> installedModPackages;
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-
         downloadProgress.setMinWidth(90);
         modInfoHbox.getChildren().remove(downloadProgress);
 
@@ -113,22 +94,18 @@ public class PackageItemController implements Initializable {
                 downloadButton.getScene().setCursor(Cursor.HAND);
             }
         });
-
         downloadButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
                 startDownloadTask(false);
             }
         });
-
         downloadButton.setOnMouseExited(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
                 downloadButton.getScene().setCursor(Cursor.DEFAULT);
             }
         });
-
-
     }
 
     public Task getPackageItemTask(){
@@ -164,9 +141,9 @@ public class PackageItemController implements Initializable {
             } else {
                 modNameLabel.setText(modPackage.getName());
             }
+
             descLabel.setText(thisModPackage.getVersions().get(0).getDescription());
             modInfoAnchor.getChildren().add(descLabel);
-
 
             if(installed){
                 setInstalledUI(thisModPackage);
@@ -175,9 +152,7 @@ public class PackageItemController implements Initializable {
                 setUninstalledUI(thisModPackage);
             }
         }
-
         getImage();
-
         itemAnchorPane.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -195,8 +170,6 @@ public class PackageItemController implements Initializable {
             showingInfoAnchor = false;
         }
         else {
-            System.out.println("Starting animation: " + modOwnerLabel.getText() + " : " + modNameLabel.getText());
-
             detailsChevron.setRotate(90);
             modInfoAnchor.setVisible(true);
             itemAnchorPane.setMinHeight(itemAnchorPane.getHeight() + modInfoAnchor.getHeight());
@@ -229,15 +202,14 @@ public class PackageItemController implements Initializable {
         Task task = new Task() {
             @Override
             protected Object call() throws Exception {
-                Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
-
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        packageImage.setImage(iconImage);
-                    }
-                });
-                return null;
+            Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    packageImage.setImage(iconImage);
+                }
+            });
+            return null;
             }
         };
         new Thread(task).start();
@@ -250,7 +222,6 @@ public class PackageItemController implements Initializable {
         if(installed) {
             String installedVersion = modPackage.getInstalledPackageVersion().getVersion_number();
             if(modPackage.needsUpdate()) {
-
                 String latestVersion = modPackage.getVersions().get(0).getVersion_number();
                 versionNums.add(installedVersion);
                 versionNums.add(latestVersion);
@@ -276,7 +247,6 @@ public class PackageItemController implements Initializable {
                 versionNums.add(packageVersion.getVersion_number());
             }
         }
-
         versionBox.getItems().addAll(versionNums);
         versionBox.getSelectionModel().select(0);
     }
@@ -290,14 +260,11 @@ public class PackageItemController implements Initializable {
         Task downloadTask = new Task() {
             @Override
             protected Object call() throws Exception {
-
                 System.out.println("download thread: " + thisModPackage.getName());
                 ModDownloader modDownloader = new ModDownloader();
 
                 String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
                 versionBox.setDisable(true);
-
-
 
                 modDownloader.progressProperty().addListener(new ChangeListener<Number>() {
                     @Override
@@ -309,7 +276,6 @@ public class PackageItemController implements Initializable {
                                     showNewButton(uninstallButton);
                                 }
                             });
-
                             recentlyInstalledMods = modDownloader.getRecentlyInstalledMods();
                             setRecentlyInstalled(recentlyInstalledMods);
                         }
@@ -317,8 +283,6 @@ public class PackageItemController implements Initializable {
                     }
                 });
                 modDownloader.downloadMod(thisModPackage, selectedVersion, gottenModPositions, modPackages);
-
-
                 return null;
             }
         };

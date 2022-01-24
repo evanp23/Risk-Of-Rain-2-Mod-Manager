@@ -43,72 +43,49 @@ import java.text.ParseException;
 import java.util.*;
 
 public class PackageListingController implements Initializable {
-
-
     @FXML
     private VBox packageBox;
-
     @FXML
     private Label allModsOnlineLabel;
-
     @FXML
     private ScrollPane packageScrollPane;
-
     @FXML
     private HBox labelBox;
-
     @FXML
     private AnchorPane sceneAnchorPane;
-
     @FXML
     private Label installedModsLabel;
-
     @FXML
     private ImageView playButton;
-
     @FXML
     private Pagination modPagination;
-
     @FXML
     private AnchorPane modListAnchorpane;
-
     @FXML
     private Line listingLine;
-
     @FXML
     private ComboBox searchComboBox;
-
     @FXML
     private ImageView backButton;
 
     private final int packagesPerPage = 125;
-    AnchorPane fullModAnchor = new AnchorPane();
-
+    private AnchorPane fullModAnchor = new AnchorPane();
     private Task onlineTask;
-
     private Map<Integer, List<ModPackage>> storedOnlineMods = new HashMap<>();
     private Map<Integer, List<Node>> storedOnlineNodes = new HashMap<>();
     private Map<String, Integer> gottenModPositions = new HashMap<>();
-    ObservableList<String> searchedItems = FXCollections.observableArrayList();
-
+    private ObservableList<String> searchedItems = FXCollections.observableArrayList();
     private ModFullPageController modFullPageController;
     private ConfirmWarnDialogController confirmWarnDialogController;
     private AnchorPane warnConfirmAnchor = new AnchorPane();
-
-
     private List<ModPackage> installedModPackages = new ArrayList<>();
-
-    private int currentPageNumber = 0;
     private boolean showingOnlineMods = false;
     private boolean showingInstalledMods = true;
-
-    List<ModPackage> modPackages;
+    private List<ModPackage> modPackages;
     private int packagesSize;
     private boolean settingSearchPage = false;
-
-    List<PackageVersion> installedVersions = new ArrayList<>();
+    private List<PackageVersion> installedVersions = new ArrayList<>();
     private int installedVersionsSize;
-
     private Database db = new Database();
     private Connection conn = db.connect();
     private File bepInDirectory;
@@ -123,34 +100,28 @@ public class PackageListingController implements Initializable {
         }
 
         this.onlineTask = initializeOnlineTask();
-
         new Thread(onlineTask).start();
 
         installedModsLabel.setStyle("--fx-background-color=red;");
-
         installedModsLabel.setDisable(true);
         allModsOnlineLabel.setDisable(false);
         allModsOnlineLabel.setStyle("--fx-background-color=white;");
 
-
         Image playButtonImage = new Image("images/play.png");
 
         playButton.setImage(playButtonImage);
-
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
                 initializeConfirmationWarnDialog();
             }
         });
-
         sceneAnchorPane.widthProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
                 listingLine.setEndX(sceneAnchorPane.getWidth());
             }
         });
-
         modPagination.setPageFactory(new Callback<Integer, Node>() {
             @Override
             public Node call(Integer integer) {
@@ -159,12 +130,10 @@ public class PackageListingController implements Initializable {
             }
         });
 
-
         AnchorPane.setTopAnchor(modPagination, 0.0);
         AnchorPane.setBottomAnchor(modPagination, 0.0);
         AnchorPane.setLeftAnchor(modPagination, 0.0);
         AnchorPane.setRightAnchor(modPagination, 0.0);
-
 
         backButton.setImage(new Image("/images/back.png"));
         backButton.setVisible(false);
@@ -178,7 +147,6 @@ public class PackageListingController implements Initializable {
                 if((double)t1 == 1.0){
                     int finalSize;
                     finalSize = packagesSize;
-
                     Platform.runLater(new Runnable() {
                         @Override
                         public void run() {
@@ -187,7 +155,6 @@ public class PackageListingController implements Initializable {
                             }
                         }
                     });
-
                     FilteredList<String> filteredModNames = new FilteredList<String>(searchedItems);
                     searchComboBox.getEditor().textProperty().addListener(new InputFilter(searchComboBox, filteredModNames, false, finalSize));
                     searchComboBox.setItems(filteredModNames);
@@ -195,13 +162,10 @@ public class PackageListingController implements Initializable {
                     searchComboBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
                         @Override
                         public void changed(ObservableValue observableValue, Object o, Object t1) {
-
                             if(!(t1 == null || t1.equals("") || t1.equals(o) || (t1 == null && o == null))) {
                                 fullModAnchor.setMinHeight(sceneAnchorPane.getHeight());
                                 fullModAnchor.setMinWidth(sceneAnchorPane.getWidth());
-
                                 sceneAnchorPane.getChildren().remove(modPagination);
-
                                 installedModsLabel.setDisable(true);
                                 try {
                                     showFullModPage(modPackages.get(searchedItems.indexOf(t1)));
@@ -210,9 +174,7 @@ public class PackageListingController implements Initializable {
                                 }
                                 searchComboBox.setVisible(false);
                                 backButton.setVisible(true);
-
                             }
-
                         }
                     });
                 }
@@ -237,7 +199,6 @@ public class PackageListingController implements Initializable {
         }
         System.out.println("final: " + finalSize);
 
-
         if(!settingSearchPage){
             packageScrollPane.setVvalue(0.0);
         }
@@ -245,9 +206,6 @@ public class PackageListingController implements Initializable {
             settingSearchPage = false;
         }
         packageBox.getChildren().clear();
-
-
-
 
         int finalEndNum = endNum;
         Platform.runLater(new Runnable() {
@@ -266,12 +224,9 @@ public class PackageListingController implements Initializable {
                         List<PackageItemController> shownControllers = new ArrayList<>();
                         packageBox.getChildren().clear();
                         for (int i = startNum; i < finalEndNum; i++) {
-
                             FXMLLoader fxmlLoader = new FXMLLoader();
                             fxmlLoader.setLocation(getClass().getResource("/view/packageItem.fxml"));
-
                             itemAnchorPane = fxmlLoader.load();
-
                             packageItemController = fxmlLoader.getController();
                             ModPackage finalModPackage;
 
@@ -286,16 +241,13 @@ public class PackageListingController implements Initializable {
                             } catch (SQLException throwables) {
                                 throwables.printStackTrace();
                             }
-
                             packageBox.getChildren().add(itemAnchorPane);
 
                             Line itemSeparator = new Line();
                             itemSeparator.setStartX(0);
                             itemSeparator.setEndX(packageScrollPane.getWidth() - 15);
                             itemAnchorPane.getChildren().add(itemSeparator);
-
                             AnchorPane.setBottomAnchor(itemSeparator, 0.0);
-
 
                             packageScrollPane.widthProperty().addListener(new ChangeListener<Number>() {
                                 @Override
@@ -329,7 +281,6 @@ public class PackageListingController implements Initializable {
                                         confirmUninstall(finalModPackage);
                                     }
                                 });
-
                                 if (finalModPackage.needsUpdate()) {
                                     Button updateButton = packageItemController.getUpdateButton();
                                     updateButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
@@ -345,11 +296,9 @@ public class PackageListingController implements Initializable {
                                         }
                                     });
                                 }
-
                             }
                             finalModPackage.setStoredController(packageItemController);
                             finalModPackage.setStoredPackageItemNode(itemAnchorPane);
-
                             if (!showingInstalledMods) {
                                 shownNodes.add(itemAnchorPane);
                                 shownMods.add(finalModPackage);
@@ -367,8 +316,6 @@ public class PackageListingController implements Initializable {
                 }
             }
         });
-
-
         return packageBox;
     }
 
@@ -378,14 +325,11 @@ public class PackageListingController implements Initializable {
                 db.addMod(packageVersion, conn);
                 ModPackage recentlyInstalled = findModPackage(packageVersion);
                 if(!installedVersions.contains(packageVersion)) {
-
                     recentlyInstalled.setInstalledPackageVersion(packageVersion);
-
                     this.installedModPackages.add(recentlyInstalled);
                     installedVersionsSize += 1;
                 }
             }
-
             for(int key : storedOnlineMods.keySet()){
                 for(int i = 0; i < storedOnlineMods.get(key).size(); i++){
                     ModPackage modPackage = storedOnlineMods.get(key).get(i);
@@ -444,7 +388,6 @@ public class PackageListingController implements Initializable {
             return null;
             }
         };
-
         return onlineTask;
     }
 
@@ -460,9 +403,7 @@ public class PackageListingController implements Initializable {
 
     private void getConfig() throws IOException {
         JSONObject configObj = JsonReader.readJsonFromFile("Config/Config.json");
-
         String gameDir = configObj.getString("directory");
-
         this.gameDirectory = new File(gameDir);
         this.bepInDirectory = new File(gameDirectory.getAbsolutePath() + "/BepInEx");
     }
@@ -485,11 +426,8 @@ public class PackageListingController implements Initializable {
             showingOnlineMods = true;
             showingInstalledMods = false;
             int maxPages = (int)Math.ceil((double)packagesSize / (double)packagesPerPage);
-
             modPagination.setMaxPageIndicatorCount(maxPages);
-
             modPagination.setCurrentPageIndex(0);
-
             if (!sceneAnchorPane.getChildren().contains(modPagination)){
                 showModListPage();
             }
@@ -499,19 +437,15 @@ public class PackageListingController implements Initializable {
 
     public void installedLabelOnMouseClicked(){
         Platform.runLater(() -> {
-
             installedModsLabel.setDisable(true);
             allModsOnlineLabel.setDisable(false);
-
             packageBox.getChildren().clear();
             showingOnlineMods = false;
             showingInstalledMods = true;
             searchComboBox.setVisible(false);
             int maxPages = (int) Math.ceil((double) installedVersionsSize / (double) packagesPerPage);
             modPagination.setMaxPageIndicatorCount(maxPages);
-
             modPagination.setCurrentPageIndex(0);
-
             if (!sceneAnchorPane.getChildren().contains(modPagination)){
                 showModListPage();
             }
@@ -524,12 +458,10 @@ public class PackageListingController implements Initializable {
             File gameDir = new File(configObject.getString("directory"));
             File gameExe = new File(gameDir + "/Risk Of Rain 2.exe");
 
-
             ProcessBuilder pb;
             pb = new ProcessBuilder(gameExe.getAbsolutePath());
             pb.directory(gameDir);
             pb.start();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -539,13 +471,11 @@ public class PackageListingController implements Initializable {
 
         FXMLLoader fxmlLoader = new FXMLLoader();
         fxmlLoader.setLocation(getClass().getResource("/view/ModFullPage.fxml"));
-
         try {
             fullModAnchor = fxmlLoader.load();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         modFullPageController = fxmlLoader.getController();
         fullModAnchor.setMinWidth(modListAnchorpane.getWidth());
     }
@@ -553,8 +483,6 @@ public class PackageListingController implements Initializable {
     public void initializeConfirmationWarnDialog(){
         FXMLLoader fxmlLoader = new FXMLLoader();
         fxmlLoader.setLocation(getClass().getResource("/view/confirmWarnDialog.fxml"));
-
-
         try {
             warnConfirmAnchor = fxmlLoader.load();
         } catch (IOException e) {
@@ -586,7 +514,6 @@ public class PackageListingController implements Initializable {
     public void showModListPage(){
         sceneAnchorPane.getChildren().remove(fullModAnchor);
         sceneAnchorPane.getChildren().add(modPagination);
-
         AnchorPane.setTopAnchor(modPagination, 55.0);
         AnchorPane.setBottomAnchor(modPagination, 0.0);
         AnchorPane.setLeftAnchor(modPagination, 0.0);
@@ -595,7 +522,6 @@ public class PackageListingController implements Initializable {
     }
 
     public void onBackButtonClicked(){
-
         searchComboBox.getEditor().clear();
         installedModsLabel.setDisable(false);
         backButton.setVisible(false);
@@ -622,11 +548,9 @@ public class PackageListingController implements Initializable {
                 modsToRemove.add(installedMod);
             }
         }
-
-
         confirmWarnDialogController.showUninstallConfirmation(modPackage, modsToRemove);
-        setWarnConfirmUI(true);
 
+        setWarnConfirmUI(true);
 
         Task removeTask = new Task() {
             @Override
@@ -673,6 +597,7 @@ public class PackageListingController implements Initializable {
             }
         };
 
+        //User Confirmed Mod Removal
         confirmWarnDialogController.getConfirmationButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -688,8 +613,7 @@ public class PackageListingController implements Initializable {
                 });
             }
         });
-
-
+        //User Canceled Mod Removal
         confirmWarnDialogController.getCancelButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -706,7 +630,6 @@ public class PackageListingController implements Initializable {
         final List<ModPackage> dependentsNeedingUpdate = new ArrayList<>();
         final List<PackageItemController> controllers = new ArrayList<>();
 
-        System.out.println("has dep");
         for(ModPackage installedPackage : installedModPackages){
             if(installedPackage.dependsOn(modPackage) && installedPackage.needsUpdate()){
                 PackageItemController controller = installedPackage.getStoredController();
@@ -718,6 +641,7 @@ public class PackageListingController implements Initializable {
         confirmWarnDialogController.showUpdateConfirmation(modPackage, dependentsNeedingUpdate);
         setWarnConfirmUI(true);
 
+        //User confirmed update one mod
         confirmWarnDialogController.getConfirmationButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -737,10 +661,7 @@ public class PackageListingController implements Initializable {
             }
         });
 
-
-
-
-
+        //User canceled mod update
         confirmWarnDialogController.getCancelButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -753,7 +674,6 @@ public class PackageListingController implements Initializable {
     private void setWarnConfirmUI(boolean setShowing){
         System.out.println("SHOWWARN GOT: " + setShowing);
         if(setShowing){
-
             DropShadow ds = new DropShadow(20, Color.GRAY);
             warnConfirmAnchor.setEffect(ds);
 
@@ -763,8 +683,6 @@ public class PackageListingController implements Initializable {
             warnConfirmAnchor.setVisible(true);
             warnConfirmAnchor.setDisable(false);
             System.out.println(warnConfirmAnchor.getWidth() + ":" + warnConfirmAnchor.getHeight() + ":" + warnConfirmAnchor.isDisable());
-
-
 
             sceneAnchorPane.widthProperty().addListener(new ChangeListener<Number>() {
                 @Override
@@ -788,24 +706,5 @@ public class PackageListingController implements Initializable {
         }
 
     }
-
-//    private void updateMods(List<ModPackage> packagesToUpdate, List<PackageItemController> packageItemControllers) throws SQLException, IOException {
-//        ModDownloader downloader = new ModDownloader();
-//
-//
-//        for(int i = 0; i < packagesToUpdate.size(); i++){
-//            ModPackage update = packagesToUpdate.get(i);
-//            PackageItemController controller = packageItemControllers.get(i);
-//
-//            downloader.removeModFiles(update.getFull_name(), bepInDirectory);
-//            db.removeMod(update, conn);
-//
-//            update.setInstalled(false);
-//            update.setInstalledPackageVersion(new PackageVersion());
-//
-//            controller.refreshHBox(update);
-//            controller.
-//        }
-//    }
 
 }

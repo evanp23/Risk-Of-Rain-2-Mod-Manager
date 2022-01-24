@@ -23,10 +23,8 @@ import java.util.ResourceBundle;
 public class LoadingModsController implements Initializable {
     @FXML
     private AnchorPane loadingAnchorPane;
-
     @FXML
     private ProgressBar loadingProgress;
-
     @FXML
     private Label manyModsLabel;
 
@@ -41,17 +39,12 @@ public class LoadingModsController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         PackageListingController packageListingController = fxmlLoader.getController();
-
-
-
         Task onlineTask = packageListingController.getOnlineTask();
-//        Task installedTask = packageListingController.getInstalledTask();
-
         loadingProgress.progressProperty().bind(onlineTask.progressProperty());
 
         int installedSize = packageListingController.getInstalledSize();
-
         if(installedSize > 30){
             manyModsLabel.setText(String.format("You have %d mods installed.\nThis could take a while.", installedSize));
         }
@@ -63,7 +56,6 @@ public class LoadingModsController implements Initializable {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
                 if((double)t1 == 1.0){
                     Stage stage = (Stage)loadingAnchorPane.getScene().getWindow();
-
 
                     double width = 911;
                     double height = 555;
@@ -78,7 +70,5 @@ public class LoadingModsController implements Initializable {
                 }
             }
         });
-
-
     }
 }
