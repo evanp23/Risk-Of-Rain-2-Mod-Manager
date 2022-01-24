@@ -1,5 +1,7 @@
 package controllers;
 
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -35,15 +37,19 @@ public class ConfirmWarnDialogController implements Initializable {
     private Button cancelButton;
     @FXML
     private HBox buttonHBox;
-    private Button updateAllButton;
+    @FXML
+    private Button intermediateButton;
+
     private double emptyHeight = 180.0;
     private double fullHeight = 280;
     private double width = 440;
+    private IntegerProperty buttonSelection = new SimpleIntegerProperty(); //-2 = resetting property -1 = cancel, 0 = middle option, 1 = confirm/confirm all/OK
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        updateAllButton = new Button();
-        updateAllButton.setText("Update All");
-        updateAllButton.setMinWidth(100);
+        intermediateButton.setText("Update All");
+        intermediateButton.setMinWidth(100);
+        buttonHBox.getChildren().remove(intermediateButton);
         cancelButton.setMinWidth(100);
         confirmationButton.setMinWidth(100);
         confirmationAnchor.setMinHeight(fullHeight);
@@ -54,8 +60,8 @@ public class ConfirmWarnDialogController implements Initializable {
 
     public void showUninstallConfirmation(ModPackage packageToRemove, List<ModPackage> dependents) {
         dependentsBox.getChildren().clear();
-        if(buttonHBox.getChildren().contains(updateAllButton)){
-            buttonHBox.getChildren().remove(updateAllButton);
+        if(buttonHBox.getChildren().contains(intermediateButton)){
+            buttonHBox.getChildren().remove(intermediateButton);
         }
         modNameLabel.setText(packageToRemove.getName());
         confirmationButton.setText("Uninstall");
@@ -91,8 +97,8 @@ public class ConfirmWarnDialogController implements Initializable {
     }
 
     public void showUpdateConfirmation(ModPackage packageToUpdate, List<ModPackage> dependenciesNeedingUpdate){
-        if(buttonHBox.getChildren().contains(updateAllButton)){
-            buttonHBox.getChildren().remove(updateAllButton);
+        if(buttonHBox.getChildren().contains(intermediateButton)){
+            buttonHBox.getChildren().remove(intermediateButton);
         }
         double parentHeight = confirmationAnchor.getParent().getLayoutBounds().getHeight();
         double parentWidth = confirmationAnchor.getParent().getLayoutBounds().getWidth();
@@ -108,7 +114,7 @@ public class ConfirmWarnDialogController implements Initializable {
             }
             dependentScrollPane.setVisible(true);
             confirmationLabel.setText("Some dependencies also need updates: ");
-            buttonHBox.getChildren().add(updateAllButton);
+            buttonHBox.getChildren().add(1, intermediateButton);
             confirmationButton.setText("Just update\nthis mod");
             confirmationAnchor.setMinHeight(fullHeight);
             confirmationAnchor.setMaxHeight(fullHeight);
@@ -136,6 +142,22 @@ public class ConfirmWarnDialogController implements Initializable {
         return this.cancelButton;
     }
     public Button getUpdateAllButton(){
-        return this.updateAllButton;
+        return this.intermediateButton;
+    }
+
+    public void onCancelClicked(){
+        buttonSelection.set(-1);
+    }
+
+    public void onIntermediateClicked(){
+        buttonSelection.set(0);
+    }
+
+    public void onConfirmOKClicked(){
+        buttonSelection.set(1);
+    }
+
+    public IntegerProperty selectionProperty(){
+        return this.buttonSelection;
     }
 }

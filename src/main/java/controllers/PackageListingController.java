@@ -498,22 +498,21 @@ public class PackageListingController implements Initializable {
         modFullPageController.setData(modPackage);
         modListAnchorpane.setVisible(false);
         fullModAnchor.setVisible(true);
-        sceneAnchorPane.getChildren().remove(modPagination);
         if(!sceneAnchorPane.getChildren().contains(fullModAnchor)) {
             sceneAnchorPane.getChildren().add(fullModAnchor);
         }
         AnchorPane.setBottomAnchor(fullModAnchor, 0.0);
-        AnchorPane.setTopAnchor(fullModAnchor, 60.0);
+        AnchorPane.setTopAnchor(fullModAnchor, 55.0);
         AnchorPane.setRightAnchor(fullModAnchor, 0.0);
         AnchorPane.setLeftAnchor(fullModAnchor, 0.0);
-
-        sceneAnchorPane.getChildren().remove(warnConfirmAnchor);
-        sceneAnchorPane.getChildren().add(warnConfirmAnchor);
     }
 
     public void showModListPage(){
         sceneAnchorPane.getChildren().remove(fullModAnchor);
+        sceneAnchorPane.getChildren().remove(warnConfirmAnchor);
         sceneAnchorPane.getChildren().add(modPagination);
+        sceneAnchorPane.getChildren().add(warnConfirmAnchor);
+        fullModAnchor.setVisible(false);
         AnchorPane.setTopAnchor(modPagination, 55.0);
         AnchorPane.setBottomAnchor(modPagination, 0.0);
         AnchorPane.setLeftAnchor(modPagination, 0.0);
@@ -537,6 +536,7 @@ public class PackageListingController implements Initializable {
     }
 
     private void confirmUninstall(ModPackage modPackage){
+        initializeConfirmationWarnDialog();
         ModDownloader modDownloader = new ModDownloader();
         List<String> filesToRemove = new ArrayList<>();
         List<ModPackage> modsToRemove = new ArrayList<>();
@@ -550,74 +550,84 @@ public class PackageListingController implements Initializable {
         }
         confirmWarnDialogController.showUninstallConfirmation(modPackage, modsToRemove);
 
+        modsToRemove.add(modPackage);
+        filesToRemove.add(modPackage.getFull_name());
+
+        System.out.println(filesToRemove);
+
         setWarnConfirmUI(true);
 
         Task removeTask = new Task() {
             @Override
             protected Object call() throws Exception {
-                modsToRemove.add(modPackage);
-                for(ModPackage uninstall : modsToRemove){
-                    try {
-                        installedModPackages.remove(uninstall);
-                        modDownloader.removeModFiles(uninstall.getFull_name(), modDownloader.getBepInDir());
-                        uninstall.setInstalled(false);
-                        uninstall.setInstalledPackageVersion(null);
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                Node storedNode = uninstall.getStoredPackageItemNode();
-                                PackageItemController storedController = uninstall.getStoredController();
-                                if(showingInstalledMods) {
-                                    System.out.println("showing");
-                                    System.out.println(storedNode);
-                                    if(packageBox.getChildren().contains(storedNode)){
-                                        System.out.println("contains");
-                                    }
+            for(ModPackage uninstall : modsToRemove){
+                System.out.println("uninstalling " + uninstall.getName());
+                try {
+                    modDownloader.removeModFiles(uninstall.getFull_name(), modDownloader.getBepInDir());
+                    uninstall.setInstalled(false);
+                    uninstall.setInstalledPackageVersion(null);
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            Node storedNode = uninstall.getStoredPackageItemNode();
+                            PackageItemController storedController = uninstall.getStoredController();
+                            if(showingInstalledMods) {
+                                if(packageBox.getChildren().contains(storedNode)){
                                     packageBox.getChildren().remove(storedNode);
                                 }
-                                else{
-                                    if(storedController != null){
-                                        try {
-                                            storedController.refreshHBox(uninstall, false);
-                                        } catch (SQLException throwables) {
-                                            throwables.printStackTrace();
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
+                            }
+                            else{
+                                if(storedController != null){
+                                    try {
+                                        storedController.refreshHBox(uninstall, false);
+                                    } catch (SQLException throwables) {
+                                        throwables.printStackTrace();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
                                     }
                                 }
                             }
-                        });
-                        System.out.println("removing: " + uninstall.getFull_name());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                        }
+                    });
+                    installedModPackages.remove(uninstall);
+                    installedVersionsSize--;
+                    System.out.println("removing: " + uninstall.getFull_name());
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                return null;
+            }
+            return null;
             }
         };
 
-        //User Confirmed Mod Removal
-        confirmWarnDialogController.getConfirmationButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
+        confirmWarnDialogController.selectionProperty().addListener(new ChangeListener<Number>() {
             @Override
-            public void handle(MouseEvent mouseEvent) {
-                new Thread(removeTask).start();
-                removeTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
-                    @Override
-                    public void handle(WorkerStateEvent workerStateEvent) {
-                        for(ModPackage removeMod : modsToRemove){
-                            db.removeMod(removeMod, conn);
+            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                int selection = (int) t1;
+
+                System.out.println(selection);
+
+                //CANCEL
+                if(selection == -1){
+                    System.out.println("CANCEL");
+                    setWarnConfirmUI(false);
+
+                }
+                //USER CONFIRMED REMOVE MOD
+                else if(selection == 1){
+                    System.out.println("CONFIRM");
+                    new Thread(removeTask).start();
+                    removeTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+                        @Override
+                        public void handle(WorkerStateEvent workerStateEvent) {
+                            for(ModPackage removeMod : modsToRemove){
+                                db.removeMod(removeMod, conn);
+                            }
+                            setWarnConfirmUI(false);
                         }
-                        setWarnConfirmUI(false);
-                    }
-                });
-            }
-        });
-        //User Canceled Mod Removal
-        confirmWarnDialogController.getCancelButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                setWarnConfirmUI(false);
+                    });
+                }
+                confirmWarnDialogController.selectionProperty().set(-2);
             }
         });
 
@@ -676,12 +686,11 @@ public class PackageListingController implements Initializable {
         if(setShowing){
             DropShadow ds = new DropShadow(20, Color.GRAY);
             warnConfirmAnchor.setEffect(ds);
-
+            warnConfirmAnchor.setVisible(true);
+            warnConfirmAnchor.setDisable(false);
             labelBox.setDisable(true);
             modPagination.setDisable(true);
             searchComboBox.setDisable(true);
-            warnConfirmAnchor.setVisible(true);
-            warnConfirmAnchor.setDisable(false);
             System.out.println(warnConfirmAnchor.getWidth() + ":" + warnConfirmAnchor.getHeight() + ":" + warnConfirmAnchor.isDisable());
 
             sceneAnchorPane.widthProperty().addListener(new ChangeListener<Number>() {
