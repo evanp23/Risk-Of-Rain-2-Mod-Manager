@@ -69,7 +69,9 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Screenshot][product-screenshot]](https://imgur.com/a/6o16y41)
+<a href="https://imgur.com/a/6o16y41">
+    <img src="https://i.imgur.com/FEJ9gFV.jpeg">
+</a>
 
 Risk of Rain 2 Mod Manager in JavaFX.
 
