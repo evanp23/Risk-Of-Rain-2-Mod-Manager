@@ -30,7 +30,8 @@
 <br />
 <div align="center">
   <a href="https://github.com/evanp23/Risk-Of-Rain-2-Mod-Manager">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    Logo Coming soon!
+    <!-- <img src="images/logo.png" alt="Logo" width="80" height="80"> -->
   </a>
 
   <h3 align="center">Risk Of Rain 2 Mod Manager</h3>
@@ -182,6 +183,7 @@ Just make sure you reference the issue your pull request is for
 - [ ] Upload manage to Thunderstore
 - [ ] Add support for Thunderstore "Download with mod manager" protocol
 - [ ] UI Tweaks
+- [ ] Get an icon
 
 See the [open issues](https://github.com/evanp23/Risk-Of-Rain-2-Mod-Manager/issues) for a full list of proposed features (and known issues).
 
