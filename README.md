@@ -69,7 +69,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Screenshot Coming Soon][product-screenshot]](https://example.com)
+[![Screenshot][product-screenshot]](https://imgur.com/a/6o16y41)
 
 Risk of Rain 2 Mod Manager in JavaFX.
 
@@ -99,7 +99,7 @@ I tried to make this as easy as possible to be cloned and run.
 
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
+To run the application in its current state, you'll need:
 * An IDE
 * A SQLite Database Browser. I Recommend [DB Browser for SQLite](https://sqlitebrowser.org/dl/).
   * Important note: You may need the browser for deleting stored mods and starting fresh. Since
@@ -188,9 +188,9 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@your_twitter](https://twitter.com/your_username) - email@example.com
+Evan Phillips - phillipse7@student.wpunj.edu
 
-Project Link: [https://github.com/your_username/repo_name](https://github.com/your_username/repo_name)
+Project Link: [https://github.com/evanp23/Risk-Of-Rain-2-Mod-Manager](https://github.com/your_username/repo_name)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -221,4 +221,4 @@ Where I got the template for this README:
 [license-url]: https://github.com/evanp23/Risk-Of-Rain-2-Mod-Manager/blob/main/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://www.linkedin.com/in/evan-phillips-73a193164/
-[product-screenshot]: images/screenshot.png
+[product-screenshot]: https://imgur.com/FEJ9gFV

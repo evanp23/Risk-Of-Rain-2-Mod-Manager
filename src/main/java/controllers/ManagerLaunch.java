@@ -27,13 +27,13 @@ public class ManagerLaunch extends Application {
 
         if(!(gameDir.equals(""))) {
             Parent root = FXMLLoader.load(getClass().getResource("/view/LoadingMods.fxml"));
-            primaryStage.setTitle("Hello World");
+            primaryStage.setTitle("Risk Of Rain 2 Mod Manager");
             primaryStage.setScene(new Scene(root));
             primaryStage.show();
         }
         else{
             Parent root = FXMLLoader.load(getClass().getResource("/view/ChooseGameDirectory.fxml"));
-            primaryStage.setTitle("Hello World");
+            primaryStage.setTitle("Choose Directory");
             primaryStage.setScene(new Scene(root));
             primaryStage.show();
         }

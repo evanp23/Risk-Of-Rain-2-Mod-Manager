@@ -63,6 +63,7 @@ public class LoadingModsController implements Initializable {
                     Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
                     stage.setX((screenBounds.getWidth() - width) / 2);
                     stage.setY((screenBounds.getHeight() - height) / 2);
+                    stage.setTitle("Risk Of Rain 2 Mod Manager");
                     Scene scene = new Scene(finalRoot, width, height);
 
                     stage.setScene(scene);
