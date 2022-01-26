@@ -420,6 +420,10 @@ public class PackageListingController implements Initializable {
         List<String> filesToRemove = new ArrayList<>();
         List<ModPackage> modsToRemove = new ArrayList<>();
 
+        ModPackage bepInEx = modPackages.get(gottenModPositions.get("bbepis-BepInExPack"));
+        ModPackage r2api = modPackages.get(gottenModPositions.get("tristanmcpherson-R2API"));
+        System.out.println(r2api.getFull_name());
+
         for(ModPackage installedMod : installedModPackages){
             if(installedMod.dependsOn(modPackage)){
                 filesToRemove.add(installedMod.getFull_name());
@@ -461,7 +465,7 @@ public class PackageListingController implements Initializable {
                         }
                     });
                     installedModPackages.remove(uninstall);
-                    installedVersionsSize--;
+                    installedVersionsSize = installedModPackages.size();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

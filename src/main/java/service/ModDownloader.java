@@ -137,14 +137,6 @@ public class ModDownloader {
         }
     }
 
-    public Task getDownloadTask(){
-        return this.downloadTask;
-    }
-
-    private void setRecentlyInstalledMod(PackageVersion packageVersion){
-        this.recentlyInstalledMods.add(packageVersion);
-    }
-
     public List<PackageVersion> getRecentlyInstalledMods(){
         return this.recentlyInstalledMods;
     }
@@ -239,7 +231,6 @@ public class ModDownloader {
 
             File deletableZip = new File(tempZips + "/" + modFullname + ".zip");
             deletableZip.delete();
-            setRecentlyInstalledMod(packageVersion);
 
 
         }catch (ZipException e) {
@@ -255,9 +246,6 @@ public class ModDownloader {
         return this.bepInDir;
     }
 
-    public void clearRecentlyInstalled(){
-        recentlyInstalledMods.clear();
-    }
 
     private ModPackage findModPackage(PackageVersion packageVersion, Map<String, Integer> gottenModPositions, List<ModPackage> modPackages){
         String packageName = packageVersion.getName();
