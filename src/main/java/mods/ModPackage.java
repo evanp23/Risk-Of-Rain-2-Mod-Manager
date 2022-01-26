@@ -1,6 +1,8 @@
 package mods;
 
 import controllers.PackageItemController;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
@@ -21,11 +23,12 @@ public class ModPackage {
     private boolean has_nsfw_content;
     private List<String> categories;
     private List<PackageVersion> versions;
-    private boolean installed;
+    private BooleanProperty installed = new SimpleBooleanProperty();;
     private PackageVersion installedPackageVersion;
     private Map<String, PackageVersion> versionsMap;
     private PackageItemController storedController;
     private Node storedPackageItemNode;
+    private boolean isDrawn;
 
     public ModPackage(){
 
@@ -48,11 +51,13 @@ public class ModPackage {
         this.has_nsfw_content = has_nsfw_content;
         this.categories = categories;
         this.versions = versions;
-        this.installed = installed;
+        this.installed.set(installed);
         this.installedPackageVersion = installedPackageVersion;
         this.versionsMap = versionsMap;
         this.storedController = null;
         this.storedPackageItemNode = null;
+        this.installed.set(installed);
+        this.isDrawn = false;
     }
 
     public String getName() {
@@ -159,12 +164,16 @@ public class ModPackage {
         this.versions = versions;
     }
 
+    public BooleanProperty installedProperty() {
+        return installed;
+    }
+
     public boolean isInstalled(){
-        return this.installed;
+        return this.installed.get();
     }
 
     public void setInstalled(boolean installed){
-        this.installed = installed;
+        this.installed.set(installed);
     }
 
     public PackageVersion getInstalledPackageVersion(){
@@ -215,6 +224,14 @@ public class ModPackage {
 
     public PackageItemController getStoredController() {
         return storedController;
+    }
+
+    public boolean isDrawn() {
+        return this.isDrawn;
+    }
+
+    public void setDrawn(boolean isDrawn){
+        this.isDrawn = true;
     }
 
     @Override

@@ -94,7 +94,7 @@ public class PackageGetter {
                 versionsMap.put(vNum, onePackageVersion);
             }
 
-            PackageVersion installedPackageVersion = new PackageVersion();
+            PackageVersion installedPackageVersion = null;
             boolean isInstalled = db.modIsInstalled(pkgName, pkgOwner, conn);
             String installedVersion;
             if(isInstalled){

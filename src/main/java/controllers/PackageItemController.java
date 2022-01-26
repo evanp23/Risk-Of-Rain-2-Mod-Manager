@@ -64,6 +64,7 @@ public class PackageItemController implements Initializable {
     private List<PackageVersion> recentlyInstalledMods;
     private Task modDownloaderTask;
     private boolean showingInfoAnchor = false;
+    private boolean imageIsLoaded = false;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -120,11 +121,11 @@ public class PackageItemController implements Initializable {
         return this.recentlyInstalledMods;
     }
 
-    public void setData(ModPackage modPackage, List<ModPackage> installedModPackages, Map<String, Integer> allModsMap, List<ModPackage> allOnlineMods, boolean installed) throws IOException, SQLException {
+    public void setData(ModPackage modPackage, List<ModPackage> installedModPackages, Map<String, Integer> allModsMap, List<ModPackage> allOnlineMods) throws IOException, SQLException {
         this.gottenModPositions = allModsMap;
         this.modPackages = allOnlineMods;
         this.installedModPackages = installedModPackages;
-        this.modDownloaderTask = initializeDownloadTask();
+        this.thisModPackage = modPackage;
 
         Label descLabel = new Label();
         descLabel.setMaxWidth(200);
@@ -132,7 +133,6 @@ public class PackageItemController implements Initializable {
         descLabel.setEllipsisString("...");
 
         if(modPackage.getName() != null) {
-            this.thisModPackage = modPackage;
             modOwnerLabel.setText("by " + modPackage.getOwner());
 
             if (modPackage.isIs_deprecated()) {
@@ -144,15 +144,7 @@ public class PackageItemController implements Initializable {
 
             descLabel.setText(thisModPackage.getVersions().get(0).getDescription());
             modInfoAnchor.getChildren().add(descLabel);
-
-            if(installed){
-                setInstalledUI(thisModPackage);
-            }
-            else{
-                setUninstalledUI(thisModPackage);
-            }
         }
-        getImage();
         itemAnchorPane.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -177,54 +169,64 @@ public class PackageItemController implements Initializable {
         }
     }
 
-    public void setInstalledUI(ModPackage modPackage){
-        updateButton.setText(modPackage.getInstalledPackageVersion().getVersion_number());
+    public void setInstalledUI(){
+        updateButton.setText("Update");
         showNewButton(uninstallButton);
-        populateVersionBox(modPackage, true);
+        populateVersionBox( true);
     }
 
-    public void setUninstalledUI(ModPackage modPackage){
+    public void setUninstalledUI(){
         showNewButton(downloadButton);
-        populateVersionBox(modPackage, false);
+        populateVersionBox(false);
     }
 
-    public void refreshHBox(ModPackage modPackage, boolean installed) throws SQLException, IOException {
-        this.setData(modPackage, installedModPackages, gottenModPositions, modPackages, installed);
+    public void setState(boolean installed) throws SQLException, IOException {
+        if(installed){
+            setInstalledUI();
+        }
+        else{
+            setUninstalledUI();
+        }
     }
 
     public void startDownloadTask(boolean alreadyInstalled){
+        this.modDownloaderTask = initializeDownloadTask();
         showNewButton(downloadProgress);
         downloadProgress.progressProperty().bind(modDownloaderTask.progressProperty());
         new Thread(modDownloaderTask).start();
     }
 
-    private void getImage(){
-        Task task = new Task() {
-            @Override
-            protected Object call() throws Exception {
-            Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
-            Platform.runLater(new Runnable() {
+    public void getImage(){
+        if(!imageIsLoaded) {
+            Task getImageTask = new Task() {
                 @Override
-                public void run() {
-                    packageImage.setImage(iconImage);
+                protected Object call() throws Exception {
+                Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        packageImage.setImage(iconImage);
+                    }
+                });
+                return null;
                 }
-            });
-            return null;
-            }
-        };
-        new Thread(task).start();
+            };
+            new Thread(getImageTask).start();
+            imageIsLoaded = true;
+        }
     }
 
-    public void populateVersionBox(ModPackage modPackage, boolean installed){
+    public void populateVersionBox(boolean installed){
         versionBox.getItems().clear();
         List<String> versionNums = new ArrayList<>();
 
         if(installed) {
-            String installedVersion = modPackage.getInstalledPackageVersion().getVersion_number();
-            if(modPackage.needsUpdate()) {
-                String latestVersion = modPackage.getVersions().get(0).getVersion_number();
+            String installedVersion = thisModPackage.getInstalledPackageVersion().getVersion_number();
+            if(thisModPackage.needsUpdate()) {
+                String latestVersion = thisModPackage.getVersions().get(0).getVersion_number();
                 versionNums.add(installedVersion);
                 versionNums.add(latestVersion);
+                versionBox.setDisable(false);
 
                 versionBox.valueProperty().addListener(new ChangeListener() {
                     @Override
@@ -243,8 +245,9 @@ public class PackageItemController implements Initializable {
             }
         }
         else{
-            for (PackageVersion packageVersion : modPackage.getVersions()) {
+            for (PackageVersion packageVersion : thisModPackage.getVersions()) {
                 versionNums.add(packageVersion.getVersion_number());
+                versionBox.setDisable(false);
             }
         }
         versionBox.getItems().addAll(versionNums);
@@ -260,30 +263,29 @@ public class PackageItemController implements Initializable {
         Task downloadTask = new Task() {
             @Override
             protected Object call() throws Exception {
-                System.out.println("download thread: " + thisModPackage.getName());
-                ModDownloader modDownloader = new ModDownloader();
+            ModDownloader modDownloader = new ModDownloader();
 
-                String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
-                versionBox.setDisable(true);
+            String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
+            versionBox.setDisable(true);
 
-                modDownloader.progressProperty().addListener(new ChangeListener<Number>() {
-                    @Override
-                    public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                        if((double) t1==1.0){
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    showNewButton(uninstallButton);
-                                }
-                            });
-                            recentlyInstalledMods = modDownloader.getRecentlyInstalledMods();
-                            setRecentlyInstalled(recentlyInstalledMods);
-                        }
-                        updateProgress((double) t1, 1.0);
+            modDownloader.progressProperty().addListener(new ChangeListener<Number>() {
+                @Override
+                public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                    if((double) t1==1.0){
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                showNewButton(uninstallButton);
+                            }
+                        });
+                        recentlyInstalledMods = modDownloader.getRecentlyInstalledMods();
+                        setRecentlyInstalled(recentlyInstalledMods);
                     }
-                });
-                modDownloader.downloadMod(thisModPackage, selectedVersion, gottenModPositions, modPackages);
-                return null;
+                    updateProgress((double) t1, 1.0);
+                }
+            });
+            modDownloader.downloadMod(thisModPackage, selectedVersion, gottenModPositions, modPackages);
+            return null;
             }
         };
         downloadProgress.progressProperty().bind(downloadTask.progressProperty());
@@ -294,5 +296,12 @@ public class PackageItemController implements Initializable {
         return this.uninstallButton;
     }
     public Button getUpdateButton(){return this.updateButton;}
+
+    private ModPackage findModPackage(PackageVersion packageVersion){
+        String packageName = packageVersion.getName();
+        String packageAuthor = packageVersion.getNamespace();
+        int modPosition = gottenModPositions.get(packageAuthor + "-" + packageName);
+        return modPackages.get(modPosition);
+    }
 
 }
