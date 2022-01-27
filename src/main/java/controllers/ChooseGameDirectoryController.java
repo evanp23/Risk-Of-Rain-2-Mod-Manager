@@ -61,7 +61,7 @@ public class ChooseGameDirectoryController implements Initializable {
                                 fxmlLoader.setLocation(getClass().getResource("/view/LoadingMods.fxml"));
                                 Parent root = fxmlLoader.load();
                                 Stage stage = (Stage)((Node)mouseEvent.getSource()).getScene().getWindow();
-                                Scene scene = new Scene(root);
+                                Scene scene = new Scene(root, 1200, 700);
                                 stage.setScene(scene);
                                 stage.show();
                             } catch (IOException e) {

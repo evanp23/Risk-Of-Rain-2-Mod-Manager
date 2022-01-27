@@ -216,6 +216,7 @@ public class ModDownloader {
             File thisFile = new File(tempExtractions + "/" + modName);
 
             if (modName.equals("BepInExPack")) {
+                System.out.println("installandextract: " + modName);
                 installBepInEx();
             } else {
                 for (File file : thisFile.listFiles()) {

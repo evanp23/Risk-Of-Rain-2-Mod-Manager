@@ -59,6 +59,7 @@ public class ConfirmWarnDialogController implements Initializable {
     }
 
     public void showUninstallConfirmation(ModPackage packageToRemove, List<ModPackage> dependents) {
+        dependents.remove(packageToRemove);
         dependentsBox.getChildren().clear();
         if(buttonHBox.getChildren().contains(intermediateButton)){
             buttonHBox.getChildren().remove(intermediateButton);
@@ -69,7 +70,7 @@ public class ConfirmWarnDialogController implements Initializable {
         double parentHeight = confirmationAnchor.getParent().getLayoutBounds().getHeight();
         double parentWidth = confirmationAnchor.getParent().getLayoutBounds().getWidth();
 
-        if (!dependents.isEmpty()) {
+        if (dependents.size() >= 1) {
             confirmationLabel.setText("Removing this mod will also remove");
             if(!confirmationAnchor.getChildren().contains(dependentScrollPane)){
                 confirmationAnchor.getChildren().add(dependentScrollPane);
@@ -94,6 +95,7 @@ public class ConfirmWarnDialogController implements Initializable {
             confirmationAnchor.setLayoutX((parentWidth / 2) - width / 2);
             confirmationAnchor.setLayoutY((parentHeight / 2) - emptyHeight / 2);
         }
+        dependents.add(packageToRemove);
     }
 
     public void showUpdateConfirmation(ModPackage packageToUpdate, List<ModPackage> dependenciesNeedingUpdate){

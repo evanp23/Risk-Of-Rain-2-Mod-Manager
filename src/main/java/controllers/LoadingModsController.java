@@ -57,8 +57,8 @@ public class LoadingModsController implements Initializable {
                 if((double)t1 == 1.0){
                     Stage stage = (Stage)loadingAnchorPane.getScene().getWindow();
 
-                    double width = 911;
-                    double height = 555;
+                    double width = 1200;
+                    double height = 700;
 
                     Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
                     stage.setX((screenBounds.getWidth() - width) / 2);

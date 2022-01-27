@@ -1,6 +1,8 @@
 package controllers;
 
 
+import com.jfoenix.assets.JFoenixResources;
+import com.jfoenix.controls.JFXDialog;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -145,12 +147,6 @@ public class PackageItemController implements Initializable {
             descLabel.setText(thisModPackage.getVersions().get(0).getDescription());
             modInfoAnchor.getChildren().add(descLabel);
         }
-        itemAnchorPane.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                startAnimation();
-            }
-        });
         downloadButton.setFocusTraversable(false);
     }
 
@@ -189,11 +185,15 @@ public class PackageItemController implements Initializable {
         }
     }
 
+    public void showDownloadConfirmation(){
+    }
+
     public void startDownloadTask(boolean alreadyInstalled){
-        this.modDownloaderTask = initializeDownloadTask();
-        showNewButton(downloadProgress);
-        downloadProgress.progressProperty().bind(modDownloaderTask.progressProperty());
-        new Thread(modDownloaderTask).start();
+//        this.modDownloaderTask = initializeDownloadTask();
+//        showNewButton(downloadProgress);
+//        downloadProgress.progressProperty().bind(modDownloaderTask.progressProperty());
+//        new Thread(modDownloaderTask).start();
+
     }
 
     public void getImage(){
@@ -225,16 +225,20 @@ public class PackageItemController implements Initializable {
             if(thisModPackage.needsUpdate()) {
                 String latestVersion = thisModPackage.getVersions().get(0).getVersion_number();
                 versionNums.add(installedVersion);
-                versionNums.add(latestVersion);
+                versionNums.add(latestVersion + " (new)");
                 versionBox.setDisable(false);
+
+                versionBox.setStyle("-fx-text-fill: green;");
 
                 versionBox.valueProperty().addListener(new ChangeListener() {
                     @Override
                     public void changed(ObservableValue observableValue, Object o, Object t1) {
-                        if (t1.equals(latestVersion)) {
-                            showNewButton(updateButton);
-                        } else if (t1.equals(installedVersion)) {
-                            showNewButton(uninstallButton);
+                        if(t1 != null) {
+                            if (t1.equals(latestVersion + " (new)")) {
+                                showNewButton(updateButton);
+                            } else if (t1.equals(installedVersion)) {
+                                showNewButton(uninstallButton);
+                            }
                         }
                     }
                 });
@@ -302,6 +306,10 @@ public class PackageItemController implements Initializable {
         String packageAuthor = packageVersion.getNamespace();
         int modPosition = gottenModPositions.get(packageAuthor + "-" + packageName);
         return modPackages.get(modPosition);
+    }
+
+    public Node getAnchorPane(){
+        return this.itemAnchorPane;
     }
 
 }
