@@ -317,7 +317,6 @@ public class PackageListingController implements Initializable {
     }
 
     public void initializeModFullPage(){
-
         FXMLLoader fxmlLoader = new FXMLLoader();
         fxmlLoader.setLocation(getClass().getResource("/view/ModFullPage.fxml"));
         try {
@@ -340,6 +339,7 @@ public class PackageListingController implements Initializable {
         confirmWarnDialogController = fxmlLoader.getController();
         sceneAnchorPane.getChildren().add(warnConfirmAnchor);
         warnConfirmAnchor.setVisible(false);
+        confirmWarnDialogController.setParent(sceneAnchorPane);
     }
 
     public void showFullModPage(ModPackage modPackage) throws ParseException {
@@ -383,6 +383,36 @@ public class PackageListingController implements Initializable {
         return modPackages.get(modPosition);
     }
 
+    private void confirmDownload(ModPackage modPackage) throws SQLException, IOException {
+        initializeConfirmationWarnDialog();
+        ModDownloader modDownloader = new ModDownloader();
+        ComboBox versionBox = modPackage.getStoredController().getVersionBox();
+        System.out.println(versionBox.getSelectionModel().getSelectedItem());
+        List<ModPackage> allToInstall = new ArrayList<>();
+        modDownloader.getDownloadUrls(modPackage, (String) versionBox.getSelectionModel().getSelectedItem(), gottenModPositions, modPackages, allToInstall);
+
+
+        confirmWarnDialogController.showDownloadConfirmation(modPackage, allToInstall);
+        setWarnConfirmUI(true);
+
+        confirmWarnDialogController.selectionProperty().addListener((obs, old, t1)->{
+            if(modPackage.isFlaggedForInstall()) {
+                if ((int) t1 == -1) {
+                    setWarnConfirmUI(false);
+                    for (ModPackage removeInstalledV : allToInstall) {
+                        if (removeInstalledV.isFlaggedForInstall()) {
+                            removeInstalledV.setInstalledPackageVersion(null);
+                        }
+                    }
+                } else if ((int) t1 == 1) {
+                    setWarnConfirmUI(false);
+                    modPackage.getStoredController().startDownloadTask(allToInstall);
+                }
+                confirmWarnDialogController.selectionProperty().set(-2);
+            }
+        });
+    }
+
     private void confirmUninstall(ModPackage modPackage){
         initializeConfirmationWarnDialog();
         ModDownloader modDownloader = new ModDownloader();
@@ -403,14 +433,19 @@ public class PackageListingController implements Initializable {
             System.out.println(installedModPackages);
             modsToRemove.addAll(installedModPackages);
             System.out.println("size: " + installedModPackages.size() + ":" + modsToRemove.size());
+            for(ModPackage modPackage1 : modsToRemove){
+                modPackage1.flagForUninstall(true);
+            }
         }
         else {
             for (ModPackage installedMod : installedModPackages) {
                 if (installedMod.dependsOn(modPackage)) {
                     modsToRemove.add(installedMod);
+                    installedMod.flagForUninstall(true);
                 }
             }
             modsToRemove.add(modPackage);
+            modPackage.flagForUninstall(true);
         }
 
         confirmWarnDialogController.showUninstallConfirmation(modPackage, modsToRemove);
@@ -423,66 +458,87 @@ public class PackageListingController implements Initializable {
         confirmWarnDialogController.selectionProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                int selection = (int) t1;
-                //CANCEL
-                if(selection == -1){
-                    setWarnConfirmUI(false);
-                }
-                //USER CONFIRMED REMOVE MOD
-                else if(selection == 1){
-                    new Thread(removeTask).start();
-                    removeTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
-                        @Override
-                        public void handle(WorkerStateEvent workerStateEvent) {
-                            for(ModPackage removeMod : finalModsToRemove){
-                                db.removeMod(removeMod, conn);
-                            }
-                            setWarnConfirmUI(false);
+                if(modPackage.isFlaggedForUninstall()) {
+                    int selection = (int) t1;
+                    //CANCEL
+                    if (selection == -1) {
+                        setWarnConfirmUI(false);
+                        for(ModPackage modPackage1 : finalModsToRemove){
+                            modPackage1.flagForUninstall(false);
                         }
-                    });
+                    }
+                    //USER CONFIRMED REMOVE MOD
+                    else if (selection == 1) {
+                        new Thread(removeTask).start();
+                        removeTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+                            @Override
+                            public void handle(WorkerStateEvent workerStateEvent) {
+                                for (ModPackage removeMod : finalModsToRemove) {
+                                    db.removeMod(removeMod, conn);
+                                    removeMod.flagForUninstall(false);
+                                }
+                                setWarnConfirmUI(false);
+                            }
+                        });
+                    }
+                    confirmWarnDialogController.selectionProperty().set(-2);
                 }
-                confirmWarnDialogController.selectionProperty().set(-2);
             }
         });
 
     }
 
-    private void confirmUpdate(ModPackage modPackage) throws SQLException, IOException {
+    private void confirmUpdate(ModPackage modPackage, boolean allMods) throws SQLException, IOException {
         ModDownloader modDownloader = new ModDownloader();
-        PackageVersion installedVersion = modPackage.getInstalledPackageVersion();
-        List<String> filesToRemove = new ArrayList<>();
-        final List<ModPackage> dependentsNeedingUpdate = new ArrayList<>();
-        final List<PackageItemController> controllers = new ArrayList<>();
-
-        for(ModPackage installedPackage : installedModPackages){
-            if(installedPackage.dependsOn(modPackage) && installedPackage.needsUpdate()){
-                PackageItemController controller = installedPackage.getStoredController();
-                dependentsNeedingUpdate.add(installedPackage);
-                controllers.add(controller);
+        List<ModPackage> allModsToUpdate = new ArrayList<>();
+        if(allMods){
+            for(ModPackage installed : installedModPackages){
+                if(installed.needsUpdate()){
+                    allModsToUpdate.add(installed);
+                    installed.flagForUpdate(true);
+                }
             }
         }
+        modPackage.flagForUpdate(true);
 
-        confirmWarnDialogController.showUpdateConfirmation(modPackage, dependentsNeedingUpdate);
+        confirmWarnDialogController.showUpdateConfirmation(modPackage, allModsToUpdate);
         setWarnConfirmUI(true);
 
-        confirmWarnDialogController.selectionProperty().addListener((obs, old, t1)->{
-            int selection = (int) t1;
+        confirmWarnDialogController.selectionProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                if(modPackage.isFlaggedForUpdate()) {
+                    int selection = (int) t1;
 
-            //CANCEL
-            if(selection == -1){
-                setWarnConfirmUI(false);
-                System.out.println("update cancelled");
-            }
-            //USER CONFIRMED UPDATE MOD
-            else if(selection == 0){
-                System.out.println("update just mod");
-            }
-            //USER CONFIRMED UPDATE MOD AND DEPENDENTS
-            else if(selection == 1){
-                System.out.println("update mod and dependents");
-            }
-            confirmWarnDialogController.selectionProperty().set(-2);
+                    //CANCEL
+                    if (selection == -1) {
 
+                        for(ModPackage removeFlag : allModsToUpdate){
+                            removeFlag.flagForUpdate(false);
+                        }
+                        setWarnConfirmUI(false);
+                    }
+                    //USER CONFIRMED UPDATE MOD
+                    else if (selection == 1) {
+                        List<ModPackage> installPackages = new ArrayList<>();
+                        setWarnConfirmUI(false);
+                        try {
+                            modPackage.getStoredController().setState(false);
+                            modDownloader.getDownloadUrls(modPackage, "", gottenModPositions, modPackages, installPackages);
+                        } catch (SQLException throwables) {
+                            throwables.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        modPackage.getStoredController().startDownloadTask(installPackages);
+//                        for(ModPackage removeFlag : allModsToUpdate){
+//                            removeFlag.flagForUpdate(false);
+//                        }
+                        setWarnConfirmUI(false);
+                    }
+                    confirmWarnDialogController.selectionProperty().set(-2);
+                }
+            }
         });
 
 //        //User confirmed update one mod
@@ -575,8 +631,21 @@ public class PackageListingController implements Initializable {
             setUninstallListener(packageToDraw, drawnPackageController.getUninstallButton());
             setUpdateButtonListener(packageToDraw, drawnPackageController.getUpdateButton());
         }
+        setDownloadButtonListener(packageToDraw, drawnPackageController.getDownloadButton());
 
         return packageItemAnchorPane;
+    }
+
+    private void setDownloadButtonListener(ModPackage packageToDraw, Button downloadButton) {
+        downloadButton.setOnMouseClicked((event -> {
+            try {
+                confirmDownload(packageToDraw);
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }));
     }
 
     private void setInstalledPropertyListener(ModPackage modPackage){
@@ -585,13 +654,19 @@ public class PackageListingController implements Initializable {
             public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
                 System.out.println(modPackage.getName() + ":" + newValue);
                 PackageItemController storedController = modPackage.getStoredController();
-                if (newValue) {
+                if (newValue && !modPackage.isFlaggedForUpdate()) {
+                    if(showingInstalledMods && !packageBox.getChildren().contains(storedController.getAnchorPane())){
+                        Platform.runLater(()-> {packageBox.getChildren().add(storedController.getAnchorPane());});
+                    }
                     installedModPackages.add(modPackage);
                     installedVersionsSize = installedModPackages.size();
                     setUninstallListener(modPackage, storedController.getUninstallButton());
                     setUpdateButtonListener(modPackage, storedController.getUpdateButton());
                     db.addMod(modPackage.getInstalledPackageVersion(), conn);
-                } else {
+                } else if(!modPackage.isFlaggedForUpdate()){
+                    if(showingInstalledMods && packageBox.getChildren().contains(storedController.getAnchorPane())){
+                        Platform.runLater(()-> {packageBox.getChildren().remove(storedController.getAnchorPane());});
+                    }
                     installedModPackages.remove(modPackage);
                     installedVersionsSize = installedModPackages.size();
                     db.removeMod(modPackage, conn);
@@ -629,7 +704,7 @@ public class PackageListingController implements Initializable {
             @Override
             public void handle(MouseEvent event) {
                 try {
-                    confirmUpdate(modPackage);
+                    confirmUpdate(modPackage, false);
                 } catch (SQLException sqlException) {
                     sqlException.printStackTrace();
                 } catch (IOException ioException) {
@@ -648,36 +723,14 @@ public class PackageListingController implements Initializable {
                         modDownloader.removeModFiles(uninstall.getFull_name(), modDownloader.getBepInDir());
                         uninstall.setInstalled(false);
                         uninstall.setInstalledPackageVersion(null);
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                PackageItemController storedController = uninstall.getStoredController();
-                                if(showingInstalledMods) {
-                                    Node storedNode = uninstall.getStoredController().getAnchorPane();
-                                    if(packageBox.getChildren().contains(storedNode)){
-                                        System.out.println("contains");
-                                        packageBox.getChildren().remove(storedNode);
-                                    }
-                                }
-                                try {
-                                    storedController.setState(false);
-                                } catch (SQLException sqlException) {
-                                    sqlException.printStackTrace();
-                                } catch (IOException ioException) {
-                                    ioException.printStackTrace();
-                                }
-                            }
-                        });
-                        installedModPackages.remove(uninstall);
-                        installedVersionsSize = installedModPackages.size();
+                        uninstall.flagForUninstall(false);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
                 return null;
-                }
+            }
         };
-
         return removeTask;
     }
 

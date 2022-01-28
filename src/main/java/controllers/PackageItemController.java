@@ -90,25 +90,18 @@ public class PackageItemController implements Initializable {
         uninstallButton.setStyle("-fx-background-color: #c43323;");
         uninstallButton.setText("Uninstall");
 
-
-        downloadButton.setOnMouseEntered(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                downloadButton.getScene().setCursor(Cursor.HAND);
-            }
+        uninstallButton.setOnMouseEntered((event)->{
+            onMouseEntered();
         });
-        downloadButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                startDownloadTask(false);
-            }
-        });
-        downloadButton.setOnMouseExited(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                downloadButton.getScene().setCursor(Cursor.DEFAULT);
-            }
-        });
+        uninstallButton.setOnMouseExited((event -> {
+            onMouseExited();
+        }));
+        updateButton.setOnMouseEntered((event -> {
+            onMouseEntered();
+        }));
+        updateButton.setOnMouseExited((event -> {
+            onMouseExited();
+        }));
     }
 
     public Task getPackageItemTask(){
@@ -185,15 +178,11 @@ public class PackageItemController implements Initializable {
         }
     }
 
-    public void showDownloadConfirmation(){
-    }
-
-    public void startDownloadTask(boolean alreadyInstalled){
-//        this.modDownloaderTask = initializeDownloadTask();
-//        showNewButton(downloadProgress);
-//        downloadProgress.progressProperty().bind(modDownloaderTask.progressProperty());
-//        new Thread(modDownloaderTask).start();
-
+    public void startDownloadTask(List<ModPackage> modsToInstall){
+        this.modDownloaderTask = initializeDownloadTask(modsToInstall);
+        showNewButton(downloadProgress);
+        downloadProgress.progressProperty().bind(modDownloaderTask.progressProperty());
+        new Thread(modDownloaderTask).start();
     }
 
     public void getImage(){
@@ -263,15 +252,11 @@ public class PackageItemController implements Initializable {
         modInfoHbox.getChildren().add(newButton);
     }
 
-    private Task initializeDownloadTask(){
+    private Task initializeDownloadTask(List<ModPackage> modsToInstall){
         Task downloadTask = new Task() {
             @Override
             protected Object call() throws Exception {
             ModDownloader modDownloader = new ModDownloader();
-
-            String selectedVersion = (String) versionBox.getSelectionModel().getSelectedItem();
-            versionBox.setDisable(true);
-
             modDownloader.progressProperty().addListener(new ChangeListener<Number>() {
                 @Override
                 public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
@@ -282,13 +267,11 @@ public class PackageItemController implements Initializable {
                                 showNewButton(uninstallButton);
                             }
                         });
-                        recentlyInstalledMods = modDownloader.getRecentlyInstalledMods();
-                        setRecentlyInstalled(recentlyInstalledMods);
                     }
                     updateProgress((double) t1, 1.0);
                 }
             });
-            modDownloader.downloadMod(thisModPackage, selectedVersion, gottenModPositions, modPackages);
+            modDownloader.downloadMod(modsToInstall);
             return null;
             }
         };
@@ -301,6 +284,10 @@ public class PackageItemController implements Initializable {
     }
     public Button getUpdateButton(){return this.updateButton;}
 
+    public Button getDownloadButton(){
+        return this.downloadButton;
+    }
+
     private ModPackage findModPackage(PackageVersion packageVersion){
         String packageName = packageVersion.getName();
         String packageAuthor = packageVersion.getNamespace();
@@ -310,6 +297,18 @@ public class PackageItemController implements Initializable {
 
     public Node getAnchorPane(){
         return this.itemAnchorPane;
+    }
+
+    public void onMouseEntered(){
+        itemAnchorPane.getScene().setCursor(Cursor.HAND);
+    }
+
+    public void onMouseExited(){
+        itemAnchorPane.getScene().setCursor(Cursor.DEFAULT);
+    }
+
+    public ComboBox getVersionBox(){
+        return this.versionBox;
     }
 
 }

@@ -29,6 +29,9 @@ public class ModPackage {
     private PackageItemController storedController;
     private Node storedPackageItemNode;
     private boolean isDrawn;
+    private boolean flaggedForInstall;
+    private boolean flaggedForUpdate;
+    private boolean flaggedForUninstall;
 
     public ModPackage(){
 
@@ -58,6 +61,9 @@ public class ModPackage {
         this.storedPackageItemNode = null;
         this.installed.set(installed);
         this.isDrawn = false;
+        this.flaggedForInstall = false;
+        this.flaggedForUpdate = false;
+        this.flaggedForUninstall = false;
     }
 
     public String getName() {
@@ -232,6 +238,30 @@ public class ModPackage {
 
     public void setDrawn(boolean isDrawn){
         this.isDrawn = true;
+    }
+
+    public void flagForInstall(boolean flag){
+        this.flaggedForInstall = flag;
+    }
+
+    public boolean isFlaggedForInstall(){
+        return this.flaggedForInstall;
+    }
+
+    public void flagForUpdate(boolean flag){
+        this.flaggedForUpdate = flag;
+    }
+
+    public boolean isFlaggedForUpdate(){
+        return this.flaggedForUpdate;
+    }
+
+    public void flagForUninstall(boolean flag){
+        this.flaggedForUninstall = flag;
+    }
+
+    public boolean isFlaggedForUninstall() {
+        return this.flaggedForUninstall;
     }
 
     @Override

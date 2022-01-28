@@ -85,53 +85,46 @@ public class ModDownloader {
         this.progressProperty.set(progress);
     }
 
-    public void downloadMod(ModPackage modPackage, String version, Map<String, Integer> modsMap, List<ModPackage> modPackages) throws SQLException, IOException {
-        List<ModPackage> modsToInstall = new ArrayList<>();
-
-        getDownloadUrls(modPackage, version, modsMap, modPackages, modsToInstall);
-
-
+    public void downloadMod(List<ModPackage> modsToInstall) throws SQLException, IOException {
         int progressCount = 0;
-        for(ModPackage modToIntall : modsToInstall){
-            PackageVersion packageVersionToInstall = modToIntall.getInstalledPackageVersion();
-            installAndExtract(new URL(packageVersionToInstall.getDownload_url()), packageVersionToInstall);
+        for(ModPackage modToInstall : modsToInstall){
+            System.out.println("installing " + modToInstall.getFull_name());
+            PackageVersion packageVersionToInstall = modToInstall.getInstalledPackageVersion();
+            installAndExtract(new URL(packageVersionToInstall.getDownload_url()), modToInstall);
             progressCount++;
             setProgress(((double) progressCount / (double)modsToInstall.size()) - 0.1);
         }
 
         for(ModPackage modToInstall : modsToInstall){
             modToInstall.setInstalled(true);
+            modToInstall.flagForInstall(false);
+            modToInstall.flagForUpdate(false);
         }
         setProgress(1.0);
     }
 
     public void getDownloadUrls(ModPackage modPackage, String version, Map<String, Integer> modsMap, List<ModPackage> modPackages, List<ModPackage> modsToInstall) throws IOException, SQLException {
-        ModPackage bepInExPack = modPackages.get(modsMap.get("bbepis-BepInExPack"));
-        if(bepInExPack.getInstalledPackageVersion() == null && !modPackage.getFull_name().equals("bbepis-BepInExPack")){
-            getDownloadUrls(bepInExPack, "", modsMap, modPackages, modsToInstall);
-            getDownloadUrls(modPackage, version, modsMap, modPackages, modsToInstall);
-        }
-        else {
-            if (!modsToInstall.contains(modPackage) && modPackage.getInstalledPackageVersion() == null) {
-                PackageVersion installVersion;
-                if (version.equals("")) {
-                    installVersion = modPackage.getVersions().get(0);
-                } else {
-                    installVersion = modPackage.getVersionsMap().get(version);
-                }
-                modPackage.setInstalledPackageVersion(installVersion);
-                modsToInstall.add(modPackage);
-                if (installVersion.hasDependencies()) {
-                    for (String dependency : installVersion.getDependencies()) {
-                        List<String> fullName = new PackageGetter().parseFullName(dependency);
-                        String parsedFullName = fullName.get(1) + "-" + fullName.get(0);
-                        int dependencyPosition = -1;
-                        if (modsMap.containsKey(parsedFullName)) {
-                            dependencyPosition = modsMap.get(parsedFullName);
-                        }
-                        ModPackage desiredModPackage = modPackages.get(dependencyPosition);
-                        getDownloadUrls(desiredModPackage, "", modsMap, modPackages, modsToInstall);
+        if ((!modsToInstall.contains(modPackage) && modPackage.getInstalledPackageVersion() == null) || modPackage.isFlaggedForUpdate()) {
+            PackageVersion installVersion;
+            if (version.equals("")) {
+                installVersion = modPackage.getVersions().get(0);
+            } else {
+                installVersion = modPackage.getVersionsMap().get(version);
+            }
+            System.out.println(installVersion.getVersion_number());
+            modPackage.setInstalledPackageVersion(installVersion);
+            modsToInstall.add(modPackage);
+            modPackage.flagForInstall(true);
+            if (installVersion.hasDependencies()) {
+                for (String dependency : installVersion.getDependencies()) {
+                    List<String> fullName = new PackageGetter().parseFullName(dependency);
+                    String parsedFullName = fullName.get(1) + "-" + fullName.get(0);
+                    int dependencyPosition = -1;
+                    if (modsMap.containsKey(parsedFullName)) {
+                        dependencyPosition = modsMap.get(parsedFullName);
                     }
+                    ModPackage desiredModPackage = modPackages.get(dependencyPosition);
+                    getDownloadUrls(desiredModPackage, fullName.get(2), modsMap, modPackages, modsToInstall);
                 }
             }
         }
@@ -163,45 +156,51 @@ public class ModDownloader {
         }
     }
 
-    private void installBepInEx() throws IOException {
+    private void installBepInEx(File bepInTempFolder, boolean flaggedForUpdate) throws IOException {
+        System.out.println("installbepin " + flaggedForUpdate);
+        if(!flaggedForUpdate) {
+            for (File file : bepInTempFolder.listFiles()) {
+                File existFile = new File(gamePath.getAbsolutePath() + "/" + file.getName());
+                if (existFile.exists()) {
+                    if (existFile.isDirectory()) {
+                        FileUtils.deleteDirectory(existFile);
+                    } else {
+                        Files.delete(Paths.get(existFile.toString()));
+                    }
 
-        File bepInTempFolder = new File(tempExtractions + "/BepInExPack/BepInExPack/");
-
-        for(File file : bepInTempFolder.listFiles()){
-            File existFile = new File(gamePath.getAbsolutePath() + "/" + file.getName());
-            if(existFile.exists()){
-                if(existFile.isDirectory()){
-                    FileUtils.deleteDirectory(existFile);
                 }
-                else{
-                    Files.delete(Paths.get(existFile.toString()));
+                if (file.isDirectory()) {
+                    org.apache.commons.io.FileUtils.moveDirectory(file, existFile);
+                } else {
+                    org.apache.commons.io.FileUtils.moveFile(file, existFile);
                 }
-
-            }
-            if(file.isDirectory()){
-                org.apache.commons.io.FileUtils.moveDirectory(file, existFile);
-            }
-            else{
-                org.apache.commons.io.FileUtils.moveFile(file, existFile);
             }
         }
-
-        File testExt = new File(tempExtractions);
-        for(File testFile : testExt.listFiles()){
-            if(testFile.isDirectory()){
-                FileUtils.deleteDirectory(testFile);
-            }
-            else{
-                FileUtils.fileDelete(testFile.getAbsolutePath());
+        else{
+            System.out.println("not flagged");
+            for(File file : bepInTempFolder.listFiles()){
+                System.out.println(file.getAbsolutePath());
+                if(file.isDirectory()){
+                    if(file.getName().equals("core")){
+                        System.out.println("moving core");
+                        org.apache.commons.io.FileUtils.moveDirectory(file, bepInDir);
+                    }
+                }
+                else{
+                    System.out.println("moving");
+                    //TODO: FIX
+                    org.apache.commons.io.FileUtils.moveFile(file, new File(gamePath + "/" + file.getName()));
+                }
             }
         }
     }
 
-    private void installAndExtract(URL url, PackageVersion packageVersion){
+    private void installAndExtract(URL url, ModPackage modToInstall){
         try {
-            String modName = packageVersion.getName();
-            String modNamespace = packageVersion.getNamespace();
-            String modFullname = packageVersion.getFull_name();
+            PackageVersion versionToInstall = modToInstall.getInstalledPackageVersion();
+            String modName = versionToInstall.getName();
+            String modNamespace = versionToInstall.getNamespace();
+            String modFullname = versionToInstall.getFull_name();
 
             ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
             File tempZip = new File(tempZips + "/" + modFullname + ".zip");
@@ -217,10 +216,22 @@ public class ModDownloader {
 
             if (modName.equals("BepInExPack")) {
                 System.out.println("installandextract: " + modName);
-                installBepInEx();
+                File bepInTempFolder = new File(tempExtractions + "/BepInExPack/BepInExPack/");
+                installBepInEx(bepInTempFolder, modToInstall.isFlaggedForUpdate());
+                modToInstall.flagForUpdate(false);
+
+                File testExt = new File(tempExtractions);
+                for(File testFile : testExt.listFiles()){
+                    if(testFile.isDirectory()){
+                        FileUtils.deleteDirectory(testFile);
+                    }
+                    else{
+                        FileUtils.fileDelete(testFile.getAbsolutePath());
+                    }
+                }
             } else {
                 for (File file : thisFile.listFiles()) {
-                    extractFile(file, zipFile, packageVersion);
+                    extractFile(file, zipFile, versionToInstall);
                 }
             }
 

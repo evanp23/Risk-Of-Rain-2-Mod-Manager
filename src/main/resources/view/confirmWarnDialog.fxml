@@ -24,7 +24,6 @@
       <HBox fx:id="buttonHBox" alignment="CENTER" layoutY="236.0" prefHeight="25.0" prefWidth="443.0" spacing="10.0" AnchorPane.bottomAnchor="20.0">
          <children>
             <Button fx:id="cancelButton" mnemonicParsing="false" onMouseClicked="#onCancelClicked" prefHeight="25.0" prefWidth="99.0" text="Cancel" />
-            <Button fx:id="intermediateButton" mnemonicParsing="false" onMouseClicked="#onIntermediateClicked" text="Button" />
             <Button fx:id="confirmationButton" mnemonicParsing="false" onMouseClicked="#onConfirmOKClicked" text="Confirm Removal" />
          </children>
       </HBox>
