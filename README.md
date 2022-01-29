@@ -166,7 +166,7 @@ Just make sure you reference the issue your pull request is for
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Complete proper update functionality
+- [x] Complete proper update functionality
 - [ ] Complete "Full mod page"
 - [ ] Upload manage to Thunderstore
 - [ ] Add support for Thunderstore "Download with mod manager" protocol
