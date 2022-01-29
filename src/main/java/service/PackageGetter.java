@@ -1,12 +1,16 @@
 package service;
 
+
 import mods.PackageVersion;
 import database.Database;
 import mods.ModPackage;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -16,8 +20,20 @@ public class PackageGetter {
     Database db = new Database();
     Connection conn = db.connect();
 
-    public List<ModPackage> loadPackages(Map<String, Integer> gottenModPositions) throws IOException, SQLException {
-        JSONArray root = JsonReader.readJsonArrayFromUrl("https://thunderstore.io/api/v1/package/");
+
+    public List<ModPackage> loadPackages(Map<String, Integer> gottenModPositions) throws IOException, SQLException, ClassNotFoundException {
+        File jsonFile = new File("cached/thunderstorePackages.json");
+        JSONArray root = null;
+        if(jsonFile.exists()){
+            System.out.println("exists");
+            root = JsonReader.readJsonArrayFromFile(jsonFile);
+        }
+        else{
+            System.out.println("does not exist. writing.");
+            root = JsonReader.readJsonArrayFromUrl("https://thunderstore.io/api/v1/package/");
+            JsonWriter jsonWriter = new JsonWriter();
+            jsonWriter.writeJsonArrayToFile(jsonFile.getAbsolutePath(), root);
+        }
 
         for(int i = 0; i < root.length(); i++){
             JSONObject packObj = root.getJSONObject(i);
@@ -96,14 +112,10 @@ public class PackageGetter {
 
             PackageVersion installedPackageVersion = null;
             boolean isInstalled = db.modIsInstalled(pkgName, pkgOwner, conn);
-            String installedVersion;
+            String installedVersionString;
             if(isInstalled){
-                installedVersion = db.getInstalledVersion(pkgOwner, pkgName, conn);
-                for(PackageVersion packageVersion : allVersions){
-                    if(packageVersion.getVersion_number().equals(installedVersion)){
-                        installedPackageVersion = packageVersion;
-                    }
-                }
+                installedVersionString = db.getInstalledVersion(pkgOwner, pkgName, conn);
+                installedPackageVersion = versionsMap.get(installedVersionString);
             }
 
             ModPackage oneModPackage = new ModPackage(pkgName,
@@ -122,11 +134,11 @@ public class PackageGetter {
                     isInstalled,
                     installedPackageVersion,
                     versionsMap);
+
             allPackages.add(oneModPackage);
 
             gottenModPositions.put(fullName, i);
         }
-
         return allPackages;
     }
 

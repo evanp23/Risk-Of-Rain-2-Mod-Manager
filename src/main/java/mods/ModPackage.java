@@ -6,6 +6,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -23,9 +24,9 @@ public class ModPackage {
     private boolean has_nsfw_content;
     private List<String> categories;
     private List<PackageVersion> versions;
-    private BooleanProperty installed = new SimpleBooleanProperty();;
-    private PackageVersion installedPackageVersion;
     private Map<String, PackageVersion> versionsMap;
+    private BooleanProperty installed = new SimpleBooleanProperty();
+    private PackageVersion installedPackageVersion;
     private PackageItemController storedController;
     private Node storedPackageItemNode;
     private boolean isDrawn;
@@ -39,8 +40,7 @@ public class ModPackage {
 
     public ModPackage(String name, String full_name, String owner, String package_url, String date_created,
                       String date_updated, String uuid4, int rating_score, boolean is_pinned, boolean is_deprecated,
-                      boolean has_nsfw_content, List<String> categories, List<PackageVersion> versions, boolean installed,
-                      PackageVersion installedPackageVersion, Map<String, PackageVersion> versionsMap) {
+                      boolean has_nsfw_content, List<String> categories, List<PackageVersion> versions) {
         this.name = name;
         this.full_name = full_name;
         this.owner = owner;
@@ -54,12 +54,8 @@ public class ModPackage {
         this.has_nsfw_content = has_nsfw_content;
         this.categories = categories;
         this.versions = versions;
-        this.installed.set(installed);
-        this.installedPackageVersion = installedPackageVersion;
-        this.versionsMap = versionsMap;
         this.storedController = null;
         this.storedPackageItemNode = null;
-        this.installed.set(installed);
         this.isDrawn = false;
         this.flaggedForInstall = false;
         this.flaggedForUpdate = false;
@@ -168,6 +164,10 @@ public class ModPackage {
 
     public void setVersions(List<PackageVersion> versions) {
         this.versions = versions;
+    }
+
+    public void setVersionsMap(Map<String, PackageVersion> versionsMap){
+        this.versionsMap = versionsMap;
     }
 
     public BooleanProperty installedProperty() {

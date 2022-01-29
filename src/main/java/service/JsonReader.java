@@ -50,6 +50,19 @@ public class JsonReader {
         }
     }
 
+    public static JSONArray readJsonArrayFromFile(File file) throws IOException, JSONException {
+//        InputStream is = new URL(url).openStream();
+        InputStream is = new FileInputStream(file);
+        try {
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+            String jsonText = readAll(rd);
+            JSONArray json = new JSONArray(jsonText);
+            return json;
+        } finally {
+            is.close();
+        }
+    }
+
     public static JSONObject readJsonFromFile(String filePath) throws IOException, JSONException {
         //InputStream is = new URL(url).openStream();
         InputStream is = new FileInputStream(filePath);

@@ -1,5 +1,6 @@
 package service;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -14,6 +15,13 @@ public class JsonWriter {
         PrintWriter writer = new PrintWriter(jsonFile);
         writer.print(jsonObject.toString(4));
         writer.close();
+    }
 
+    public void writeJsonArrayToFile(String filePath, JSONArray jsonArray) throws FileNotFoundException {
+        File jsonFile = new File(filePath);
+
+        PrintWriter writer = new PrintWriter(jsonFile);
+        writer.print(jsonArray.toString(4));
+        writer.close();
     }
 }
