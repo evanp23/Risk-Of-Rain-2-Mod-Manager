@@ -17,6 +17,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -24,6 +27,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 import mods.ModPackage;
 import mods.PackageVersion;
@@ -32,13 +36,17 @@ import org.json.JSONObject;
 import service.*;
 
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.List;
 
 public class PackageListingController implements Initializable {
     @FXML
@@ -176,7 +184,9 @@ public class PackageListingController implements Initializable {
                     } else {
                         finalModPackage = installedModPackages.get(i);
                     }
-                    packageBox.getChildren().add(finalModPackage.getStoredPackageItemNode());
+                    if(!packageBox.getChildren().contains(finalModPackage.getStoredController().getAnchorPane())){
+                        packageBox.getChildren().add(finalModPackage.getStoredPackageItemNode());
+                    }
                     finalModPackage.getStoredController().getImage();
 
                     AnchorPane itemAnchorPane = (AnchorPane) finalModPackage.getStoredPackageItemNode();
@@ -303,17 +313,17 @@ public class PackageListingController implements Initializable {
 
     public void playButtonOnMouseClicked(){
         try {
-            JSONObject configObject = JsonReader.readJsonFromFile("Config/Config.json");
-            File gameDir = new File(configObject.getString("directory"));
-            File gameExe = new File(gameDir + "/Risk Of Rain 2.exe");
-
-            ProcessBuilder pb;
-            pb = new ProcessBuilder(gameExe.getAbsolutePath());
-            pb.directory(gameDir);
-            pb.start();
-        } catch (IOException e) {
+            URI uri = new URI("steam://run/632360");
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(uri);
+                Stage stage = (Stage)playButton.getScene().getWindow();
+                stage.setIconified(true);
+            }
+        } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
         }
+
+
     }
 
     public void initializeModFullPage(){
@@ -523,6 +533,7 @@ public class PackageListingController implements Initializable {
                         List<ModPackage> installPackages = new ArrayList<>();
                         setWarnConfirmUI(false);
                         try {
+                            modPackage.setInstalled(false);
                             modPackage.getStoredController().setState(false);
                             modDownloader.getDownloadUrls(modPackage, "", gottenModPositions, modPackages, installPackages);
                         } catch (SQLException throwables) {
@@ -652,7 +663,7 @@ public class PackageListingController implements Initializable {
         modPackage.installedProperty().addListener(new ChangeListener<Boolean>() {
             @Override
             public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-                System.out.println(modPackage.getName() + ":" + newValue);
+                System.out.println(modPackage.getName() + ": installedProperty: " + newValue + ": updateFlagged: " + modPackage.isFlaggedForUpdate() );
                 PackageItemController storedController = modPackage.getStoredController();
                 if (newValue && !modPackage.isFlaggedForUpdate()) {
                     if(showingInstalledMods && !packageBox.getChildren().contains(storedController.getAnchorPane())){

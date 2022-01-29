@@ -165,7 +165,12 @@ public class PackageItemController implements Initializable {
     }
 
     public void setUninstalledUI(){
-        showNewButton(downloadButton);
+        if(thisModPackage.isFlaggedForUpdate()){
+            showNewButton(downloadProgress);
+        }
+        else{
+            showNewButton(downloadButton);
+        }
         populateVersionBox(false);
     }
 
@@ -268,6 +273,7 @@ public class PackageItemController implements Initializable {
                             }
                         });
                     }
+                    System.out.println(t1);
                     updateProgress((double) t1, 1.0);
                 }
             });
@@ -275,7 +281,6 @@ public class PackageItemController implements Initializable {
             return null;
             }
         };
-        downloadProgress.progressProperty().bind(downloadTask.progressProperty());
         return downloadTask;
     }
 

@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ModDownloader {
     private File gamePath;
@@ -87,18 +88,19 @@ public class ModDownloader {
 
     public void downloadMod(List<ModPackage> modsToInstall) throws SQLException, IOException {
         int progressCount = 0;
+        setProgress(0.0);
         for(ModPackage modToInstall : modsToInstall){
             System.out.println("installing " + modToInstall.getFull_name());
             PackageVersion packageVersionToInstall = modToInstall.getInstalledPackageVersion();
             installAndExtract(new URL(packageVersionToInstall.getDownload_url()), modToInstall);
             progressCount++;
-            setProgress(((double) progressCount / (double)modsToInstall.size()) - 0.1);
+            setProgress(((double) progressCount / (double)modsToInstall.size()) - 0.01);
         }
 
         for(ModPackage modToInstall : modsToInstall){
-            modToInstall.setInstalled(true);
             modToInstall.flagForInstall(false);
             modToInstall.flagForUpdate(false);
+            modToInstall.setInstalled(true);
         }
         setProgress(1.0);
     }
@@ -157,42 +159,35 @@ public class ModDownloader {
     }
 
     private void installBepInEx(File bepInTempFolder, boolean flaggedForUpdate) throws IOException {
-        System.out.println("installbepin " + flaggedForUpdate);
-        if(!flaggedForUpdate) {
-            for (File file : bepInTempFolder.listFiles()) {
-                File existFile = new File(gamePath.getAbsolutePath() + "/" + file.getName());
-                if (existFile.exists()) {
-                    if (existFile.isDirectory()) {
-                        FileUtils.deleteDirectory(existFile);
-                    } else {
-                        Files.delete(Paths.get(existFile.toString()));
-                    }
-
-                }
-                if (file.isDirectory()) {
-                    org.apache.commons.io.FileUtils.moveDirectory(file, existFile);
-                } else {
-                    org.apache.commons.io.FileUtils.moveFile(file, existFile);
+            if(bepInTempFolder.isDirectory()){
+                for(File newFile : bepInTempFolder.listFiles()) {
+                    installBepInEx(newFile, true);
                 }
             }
-        }
-        else{
-            System.out.println("not flagged");
-            for(File file : bepInTempFolder.listFiles()){
-                System.out.println(file.getAbsolutePath());
-                if(file.isDirectory()){
-                    if(file.getName().equals("core")){
-                        System.out.println("moving core");
-                        org.apache.commons.io.FileUtils.moveDirectory(file, bepInDir);
+            else{
+                String parentFolder = bepInTempFolder.getParentFile().getName();
+                if(parentFolder.equals("BepInExPack")){
+                    Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), Paths.get(gamePath.getAbsolutePath() + "/" + bepInTempFolder.getName()), StandardCopyOption.REPLACE_EXISTING);
+                }
+                else if(parentFolder.equals("core") || parentFolder.equals("config")){
+                    Path existingPath = Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder + "/" + bepInTempFolder.getName());
+                    if(Files.exists(existingPath)){
+                        Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), existingPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    else{
+                        Path bepInPath = Paths.get(bepInDir.getAbsolutePath());
+                        Path parentFolderPath = Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder);
+                        if(!Files.exists(bepInPath)){
+                            Files.createDirectory(Paths.get(bepInDir.getAbsolutePath()));
+                        }
+                        if(!Files.exists(parentFolderPath)){
+                            Files.createDirectory(Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder));
+                        }
+                        Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), existingPath);
                     }
                 }
-                else{
-                    System.out.println("moving");
-                    //TODO: FIX
-                    org.apache.commons.io.FileUtils.moveFile(file, new File(gamePath + "/" + file.getName()));
-                }
             }
-        }
+//        }
     }
 
     private void installAndExtract(URL url, ModPackage modToInstall){
