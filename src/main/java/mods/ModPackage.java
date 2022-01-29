@@ -220,10 +220,6 @@ public class ModPackage {
         this.storedController = storedController;
     }
 
-    public void setStoredPackageItemNode(Node storedPackageItemNode) {
-        this.storedPackageItemNode = storedPackageItemNode;
-    }
-
     public Node getStoredPackageItemNode() {
         return storedPackageItemNode;
     }

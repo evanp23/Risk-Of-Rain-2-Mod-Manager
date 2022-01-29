@@ -3,6 +3,8 @@ package controllers;
 
 import database.Database;
 import javafx.application.Platform;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -24,6 +26,7 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -87,14 +90,15 @@ public class PackageListingController implements Initializable {
     private boolean showingInstalledMods = true;
     private List<ModPackage> modPackages;
     private int packagesSize;
-    private boolean settingSearchPage = false;
-    private List<PackageVersion> installedVersions = new ArrayList<>();
     private int installedVersionsSize;
     private Database db = new Database();
     private Connection conn = db.connect();
     private File bepInDirectory;
     private File gameDirectory;
     private String t1Saved = null;
+    private IntegerProperty packageBoxFill;
+    private boolean searching;
+    private double desiredVval;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -103,6 +107,7 @@ public class PackageListingController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        packageBoxFill = new SimpleIntegerProperty();
 
         this.onlineTask = initializeOnlineTask();
         new Thread(onlineTask).start();
@@ -130,7 +135,17 @@ public class PackageListingController implements Initializable {
         modPagination.setPageFactory(new Callback<Integer, Node>() {
             @Override
             public Node call(Integer integer) {
-                packageScrollPane.setContent(showMods(integer));
+                Platform.runLater(()->{
+                    packageScrollPane.setContent(showMods(integer));
+                    if(searching){
+                        packageScrollPane.setVvalue(desiredVval);
+                        searching = false;
+                    }
+                    else{
+                        packageScrollPane.setVvalue(0.0);
+                    }
+                });
+                System.out.println("pagination");
                 return packageScrollPane;
             }
         });
@@ -164,48 +179,40 @@ public class PackageListingController implements Initializable {
             endNum = finalSize;
         }
 
-        if(!settingSearchPage){
-            packageScrollPane.setVvalue(0.0);
-        }
-        else{
-            settingSearchPage = false;
-        }
         packageBox.getChildren().clear();
 
         int finalEndNum = endNum;
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                packageBox.getChildren().clear();
-                for (int i = startNum; i < finalEndNum; i++) {
-                    ModPackage finalModPackage;
-                    if (showingOnlineMods) {
-                        finalModPackage = modPackages.get(i);
-                    } else {
-                        finalModPackage = installedModPackages.get(i);
-                    }
-                    if(!packageBox.getChildren().contains(finalModPackage.getStoredController().getAnchorPane())){
-                        packageBox.getChildren().add(finalModPackage.getStoredPackageItemNode());
-                    }
-                    finalModPackage.getStoredController().getImage();
-
-                    AnchorPane itemAnchorPane = (AnchorPane) finalModPackage.getStoredPackageItemNode();
-
-                    Line itemSeparator = new Line();
-                    itemSeparator.setStartX(0);
-                    itemSeparator.setEndX(packageScrollPane.getWidth() - 15);
-                    itemAnchorPane.getChildren().add(itemSeparator);
-                    AnchorPane.setBottomAnchor(itemSeparator, 0.0);
-
-                    packageScrollPane.widthProperty().addListener(new ChangeListener<Number>() {
-                        @Override
-                        public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                            itemSeparator.setEndX(packageScrollPane.getWidth() - 15);
-                        }
-                    });
-                }
+        packageBox.getChildren().clear();
+        for (int i = startNum; i < finalEndNum; i++) {
+            ModPackage finalModPackage;
+            if (showingOnlineMods) {
+                finalModPackage = modPackages.get(i);
+            } else {
+                finalModPackage = installedModPackages.get(i);
             }
-        });
+            AnchorPane itemAnchorPane = (AnchorPane) finalModPackage.getStoredController().getAnchorPane();
+            if(!packageBox.getChildren().contains(itemAnchorPane)){
+                packageBox.getChildren().add(itemAnchorPane);
+            }
+            finalModPackage.getStoredController().getImage();
+
+            Line itemSeparator = new Line();
+            itemSeparator.setStartX(0);
+            itemSeparator.setEndX(packageScrollPane.getWidth() - 15);
+            itemAnchorPane.getChildren().add(itemSeparator);
+            AnchorPane.setBottomAnchor(itemSeparator, 0.0);
+
+            packageScrollPane.widthProperty().addListener(new ChangeListener<Number>() {
+                @Override
+                public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                    itemSeparator.setEndX(packageScrollPane.getWidth() - 15);
+                }
+            });
+            if(showingOnlineMods) {
+                packageBoxFill.set(i - (packagesPerPage * pageNum));
+            }
+        }
+
         return packageBox;
     }
 
@@ -234,7 +241,6 @@ public class PackageListingController implements Initializable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            setUpSearch();
             searchComboBox.setVisible(false);
             searchComboBox.setEditable(true);
             return null;
@@ -636,7 +642,6 @@ public class PackageListingController implements Initializable {
 
         packageToDraw.setDrawn(true);
         packageToDraw.setStoredController(drawnPackageController);
-        packageToDraw.setStoredPackageItemNode(packageItemAnchorPane);
 
         if (packageToDraw.isInstalled()){
             setUninstallListener(packageToDraw, drawnPackageController.getUninstallButton());
@@ -747,35 +752,59 @@ public class PackageListingController implements Initializable {
 
     private void setUpSearch(){
         searchComboBox.setItems(searchedItems);
-        AutoCompleteComboBoxListener<String> listener = new AutoCompleteComboBoxListener<>(searchComboBox);
-        searchComboBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
-            @Override
-            public void changed(ObservableValue observableValue, Object o, Object t1) {
-                System.out.println(o + ": " + t1);
-                System.out.println("saved: " + t1Saved);
-                System.out.println("********************");
-                if(!(t1 == null || t1.equals("") || t1.equals(o))){
-                    System.out.println("searchd: " + t1);
-                    fullModAnchor.setMinHeight(sceneAnchorPane.getHeight());
-                    fullModAnchor.setMinWidth(sceneAnchorPane.getWidth());
-                    sceneAnchorPane.getChildren().remove(modPagination);
-                    installedModsLabel.setDisable(true);
-                    try {
-                        showFullModPage(modPackages.get(gottenModPositions.get(t1)));
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-                    searchComboBox.setVisible(false);
-                    backButton.setVisible(true);
+        new AutoCompleteComboBoxListener<String>(searchComboBox);
+
+        searchComboBox.showingProperty().addListener((obs, hidden, showing)->{
+            String selectedItem = (String) searchComboBox.getSelectionModel().getSelectedItem();
+            if(hidden && selectedItem != null && gottenModPositions.containsKey(selectedItem)){
+                searching = true;
+                ModPackage searchedPackage = modPackages.get(gottenModPositions.get(selectedItem));
+                int pageNum = pageOf(searchedPackage);
+                desiredVval = calculateModPositionInBox(searchedPackage, pageNum);
+                if (modPagination.getCurrentPageIndex() != pageNum){
+                    modPagination.setCurrentPageIndex(pageNum);
                 }
+                else{
+                    packageScrollPane.setVvalue(desiredVval);
+                }
+                System.out.println(desiredVval);
             }
         });
+
+//        searchComboBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
+//            @Override
+//            public void changed(ObservableValue observableValue, Object o, Object t1) {
+//                System.out.println(o + ": " + t1);
+//                System.out.println("saved: " + t1Saved);
+//                System.out.println("********************");
+//                if(!(t1 == null || t1.equals("") || t1.equals(o))){
+//                    System.out.println("searchd: " + t1);
+//                    fullModAnchor.setMinHeight(sceneAnchorPane.getHeight());
+//                    fullModAnchor.setMinWidth(sceneAnchorPane.getWidth());
+//                    sceneAnchorPane.getChildren().remove(modPagination);
+//                    installedModsLabel.setDisable(true);
+//                    try {
+//                        showFullModPage(modPackages.get(gottenModPositions.get(t1)));
+//                    } catch (ParseException e) {
+//                        e.printStackTrace();
+//                    }
+//                    searchComboBox.setVisible(false);
+//                    backButton.setVisible(true);
+//                }
+//            }
+//        });
     }
 
     private int pageOf(ModPackage modPackage){
         int modPosition = gottenModPositions.get(modPackage.getFull_name());
         System.out.println((int) Math.ceil((double)modPosition / (double) packagesPerPage));
         return (int) ((double)modPosition / (double) packagesPerPage);
+    }
+
+    private double calculateModPositionInBox(ModPackage modPackage, int pageNum){
+        double modAbsolutePosition = gottenModPositions.get(modPackage.getFull_name());
+        double modRelativePosition = modAbsolutePosition - (packagesPerPage * pageNum);
+        return modRelativePosition / packagesPerPage;
     }
 
 }
