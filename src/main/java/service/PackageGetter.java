@@ -7,10 +7,7 @@ import mods.ModPackage;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -23,20 +20,26 @@ public class PackageGetter {
 
     public List<ModPackage> loadPackages(Map<String, Integer> gottenModPositions) throws IOException, SQLException, ClassNotFoundException {
         File jsonFile = new File("cached/thunderstorePackages.json");
-        JSONArray root = null;
+        JSONArray rootFromWeb = JsonReader.readJsonArrayFromUrl("https://thunderstore.io/api/v1/package/");
+        JSONArray rootFromFile = null;
+        JSONArray finalRoot = null;
+
         if(jsonFile.exists()){
-            System.out.println("exists");
-            root = JsonReader.readJsonArrayFromFile(jsonFile);
-        }
-        else{
-            System.out.println("does not exist. writing.");
-            root = JsonReader.readJsonArrayFromUrl("https://thunderstore.io/api/v1/package/");
-            JsonWriter jsonWriter = new JsonWriter();
-            jsonWriter.writeJsonArrayToFile(jsonFile.getAbsolutePath(), root);
+            rootFromFile = JsonReader.readJsonArrayFromFile(jsonFile);
+            if(rootFromWeb.toString().equals(rootFromFile.toString())){
+                System.out.println("reading from file");
+                finalRoot = rootFromFile;
+            }
+            else{
+                System.out.println("reading from web");
+                finalRoot = rootFromWeb;
+                JsonWriter jsonWriter = new JsonWriter();
+                jsonWriter.writeJsonArrayToFile("cached/thunderstorePackages.json", finalRoot);
+            }
         }
 
-        for(int i = 0; i < root.length(); i++){
-            JSONObject packObj = root.getJSONObject(i);
+        for(int i = 0; i < finalRoot.length(); i++){
+            JSONObject packObj = finalRoot.getJSONObject(i);
 
             //get all values
             String pkgName = packObj.getString("name");
@@ -86,10 +89,6 @@ public class PackageGetter {
                 boolean vIsActive = oneVersion.getBoolean("is_active");
                 String vUuid4 = oneVersion.getString("uuid4");
                 int vFileSize = oneVersion.getInt("file_size");
-
-
-
-
 
                 PackageVersion onePackageVersion = new PackageVersion(pkgOwner, vName,
                         vFullName,

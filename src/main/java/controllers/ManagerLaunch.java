@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import service.JsonReader;
 
 import java.sql.Connection;
+import java.util.List;
 
 public class ManagerLaunch extends Application {
 
@@ -25,17 +26,32 @@ public class ManagerLaunch extends Application {
         db.createTable(conn);
         conn.close();
 
+        Parameters params = getParameters();
+        List<String> launchParams = params.getRaw();
+        String protocolParameter = null;
+        if(launchParams.size() != 0){
+            protocolParameter = launchParams.get(0);
+            System.out.println(protocolParameter);
+        }
+
+        FXMLLoader loader = new FXMLLoader();
+        Parent root = null;
+
         if(!(gameDir.equals(""))) {
-            Parent root = FXMLLoader.load(getClass().getResource("/view/LoadingMods.fxml"));
+            loader.setLocation(getClass().getResource("/view/LoadingMods.fxml"));
+            root = loader.load();
+            LoadingModsController controller = loader.getController();
+            controller.setLaunchParameter(protocolParameter);
             primaryStage.setTitle("Risk Of Rain 2 Mod Manager");
-            primaryStage.setScene(new Scene(root));
-            primaryStage.show();
         }
         else{
-            Parent root = FXMLLoader.load(getClass().getResource("/view/ChooseGameDirectory.fxml"));
+            loader.setLocation(getClass().getResource("/view/ChooseGameDirectory.fxml"));
+            root = loader.load();
+            ChooseGameDirectoryController controller = loader.getController();
+            controller.setLaunchParameter(protocolParameter);
             primaryStage.setTitle("Choose Directory");
-            primaryStage.setScene(new Scene(root));
-            primaryStage.show();
         }
+        primaryStage.setScene(new Scene(root));
+        primaryStage.show();
     }
 }

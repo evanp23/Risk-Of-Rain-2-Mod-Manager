@@ -31,6 +31,9 @@ public class ChooseGameDirectoryController implements Initializable {
     private AnchorPane chooseDirAnchorPane;
     @FXML
     private Button submitDirectory;
+
+    private String launchParameter;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         browseDirectoryButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
@@ -60,6 +63,8 @@ public class ChooseGameDirectoryController implements Initializable {
                                 FXMLLoader fxmlLoader = new FXMLLoader();
                                 fxmlLoader.setLocation(getClass().getResource("/view/LoadingMods.fxml"));
                                 Parent root = fxmlLoader.load();
+                                LoadingModsController controller = fxmlLoader.getController();
+                                controller.setLaunchParameter(launchParameter);
                                 Stage stage = (Stage)((Node)mouseEvent.getSource()).getScene().getWindow();
                                 Scene scene = new Scene(root);
                                 stage.setScene(scene);
@@ -72,5 +77,9 @@ public class ChooseGameDirectoryController implements Initializable {
                 }
             }
         });
+    }
+
+    public void setLaunchParameter(String launchParameter){
+        this.launchParameter = launchParameter;
     }
 }

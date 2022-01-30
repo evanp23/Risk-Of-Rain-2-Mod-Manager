@@ -73,6 +73,9 @@ public class PackageItemController implements Initializable {
         downloadProgress.setMinWidth(90);
         modInfoHbox.getChildren().remove(downloadProgress);
 
+        itemAnchorPane.setMinHeight(57);
+        modInfoAnchor.setMinHeight(142);
+
         instLabel.setAlignment(Pos.CENTER);
 
         modInfoAnchor.setVisible(false);
@@ -151,9 +154,11 @@ public class PackageItemController implements Initializable {
             showingInfoAnchor = false;
         }
         else {
+
             detailsChevron.setRotate(90);
             modInfoAnchor.setVisible(true);
-            itemAnchorPane.setMinHeight(itemAnchorPane.getHeight() + modInfoAnchor.getHeight());
+            System.out.println(itemAnchorPane.getHeight() + ":" + modInfoAnchor.getHeight());
+            itemAnchorPane.setMinHeight(199);
             showingInfoAnchor = true;
         }
     }

@@ -40,7 +40,8 @@ public class ModPackage {
 
     public ModPackage(String name, String full_name, String owner, String package_url, String date_created,
                       String date_updated, String uuid4, int rating_score, boolean is_pinned, boolean is_deprecated,
-                      boolean has_nsfw_content, List<String> categories, List<PackageVersion> versions) {
+                      boolean has_nsfw_content, List<String> categories, List<PackageVersion> versions, boolean isInstalled,
+                      PackageVersion installedPackageVersion, Map<String, PackageVersion> packageVersionMap) {
         this.name = name;
         this.full_name = full_name;
         this.owner = owner;
@@ -54,6 +55,9 @@ public class ModPackage {
         this.has_nsfw_content = has_nsfw_content;
         this.categories = categories;
         this.versions = versions;
+        this.installed.set(isInstalled);
+        this.installedPackageVersion = installedPackageVersion;
+        this.versionsMap = packageVersionMap;
         this.storedController = null;
         this.storedPackageItemNode = null;
         this.isDrawn = false;

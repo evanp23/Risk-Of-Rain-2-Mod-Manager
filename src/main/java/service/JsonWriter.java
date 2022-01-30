@@ -21,7 +21,7 @@ public class JsonWriter {
         File jsonFile = new File(filePath);
 
         PrintWriter writer = new PrintWriter(jsonFile);
-        writer.print(jsonArray.toString(4));
+        writer.print(jsonArray.toString());
         writer.close();
     }
 }

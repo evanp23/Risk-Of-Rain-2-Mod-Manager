@@ -50,11 +50,12 @@ public class Database {
         }
     }
 
-    public void addMod(PackageVersion packageVersion, Connection conn){
-        String modName = packageVersion.getName();
-        String modOwner = packageVersion.getNamespace();
-        String version = packageVersion.getVersion_number();
-        String fullName = packageVersion.getFull_name();
+    public void addMod(ModPackage modPackage, Connection conn){
+        String modName = modPackage.getName();
+        String modOwner = modPackage.getOwner();
+        PackageVersion installedVersion = modPackage.getInstalledPackageVersion();
+        String version = installedVersion.getVersion_number();
+        String fullName = installedVersion.getFull_name();
 
         String insertStmt = "INSERT INTO installed_mods(id, name, owner, version, full_name) VALUES (NULL,?,?,?,?);";
 

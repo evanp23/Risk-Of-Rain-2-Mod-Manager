@@ -28,6 +28,8 @@ public class LoadingModsController implements Initializable {
     @FXML
     private Label manyModsLabel;
 
+    private String launchParameter;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         FXMLLoader fxmlLoader = new FXMLLoader();
@@ -41,8 +43,10 @@ public class LoadingModsController implements Initializable {
         }
 
         PackageListingController packageListingController = fxmlLoader.getController();
+
         Task onlineTask = packageListingController.getOnlineTask();
         loadingProgress.progressProperty().bind(onlineTask.progressProperty());
+
 
         int installedSize = packageListingController.getInstalledSize();
         if(installedSize > 30){
@@ -56,7 +60,7 @@ public class LoadingModsController implements Initializable {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
                 if((double)t1 == 1.0){
                     Stage stage = (Stage)loadingAnchorPane.getScene().getWindow();
-
+                    packageListingController.setLaunchParameter(launchParameter);
                     double width = 1200;
                     double height = 700;
 
@@ -71,5 +75,10 @@ public class LoadingModsController implements Initializable {
                 }
             }
         });
+    }
+
+    public void setLaunchParameter(String launchParameter){
+        this.launchParameter = launchParameter;
+        System.out.println("loading: " + launchParameter);
     }
 }

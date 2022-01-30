@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -99,6 +100,9 @@ public class PackageListingController implements Initializable {
     private IntegerProperty packageBoxFill;
     private boolean searching;
     private double desiredVval;
+    private ModPackage packageToExpand;
+    private String launchParameter = null;
+    private ObservableList<PackageItemController> controllersSearchList = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -111,6 +115,21 @@ public class PackageListingController implements Initializable {
 
         this.onlineTask = initializeOnlineTask();
         new Thread(onlineTask).start();
+
+        onlineTask.setOnSucceeded(event -> {
+            System.out.println("here");
+            if(launchParameter != null){
+                List<String> initialParams = Arrays.asList(launchParameter.split("//"));
+                String arg = initialParams.get(1);
+                List<String> allArgs = Arrays.asList(arg.split("/"));
+                ModPackage modPackage = modPackages.get(gottenModPositions.get(allArgs.get(3) + "-" + allArgs.get(4)));
+                try {
+                    showFullModPage(modPackage);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 
         installedModsLabel.setStyle("--fx-background-color=red;");
         installedModsLabel.setDisable(true);
@@ -140,12 +159,13 @@ public class PackageListingController implements Initializable {
                     if(searching){
                         packageScrollPane.setVvalue(desiredVval);
                         searching = false;
+                        packageToExpand.getStoredController().startAnimation();
                     }
                     else{
                         packageScrollPane.setVvalue(0.0);
                     }
+
                 });
-                System.out.println("pagination");
                 return packageScrollPane;
             }
         });
@@ -232,6 +252,7 @@ public class PackageListingController implements Initializable {
                     if(!searchedItems.contains(modPackage.getFull_name())) {
                         Platform.runLater(() -> searchedItems.add(modPackage.getFull_name()));
                     }
+                    controllersSearchList.add(modPackage.getStoredController());
                     setInstalledPropertyListener(modPackage);
                     drawPackageItem(modPackage);
                     updateProgress(count, modPackages.size());
@@ -319,7 +340,7 @@ public class PackageListingController implements Initializable {
 
     public void playButtonOnMouseClicked(){
         try {
-            URI uri = new URI("steam://run/632360");
+            URI uri = new URI("steam://run/632360//--doorstop-enable%20false");
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().browse(uri);
                 Stage stage = (Stage)playButton.getScene().getWindow();
@@ -328,8 +349,6 @@ public class PackageListingController implements Initializable {
         } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
         }
-
-
     }
 
     public void initializeModFullPage(){
@@ -361,6 +380,7 @@ public class PackageListingController implements Initializable {
     public void showFullModPage(ModPackage modPackage) throws ParseException {
         modFullPageController.setData(modPackage);
         modListAnchorpane.setVisible(false);
+        backButton.setVisible(true);
         fullModAnchor.setVisible(true);
         if(!sceneAnchorPane.getChildren().contains(fullModAnchor)) {
             sceneAnchorPane.getChildren().add(fullModAnchor);
@@ -678,7 +698,7 @@ public class PackageListingController implements Initializable {
                     installedVersionsSize = installedModPackages.size();
                     setUninstallListener(modPackage, storedController.getUninstallButton());
                     setUpdateButtonListener(modPackage, storedController.getUpdateButton());
-                    db.addMod(modPackage.getInstalledPackageVersion(), conn);
+                    db.addMod(modPackage, conn);
                 } else if(!modPackage.isFlaggedForUpdate()){
                     if(showingInstalledMods && packageBox.getChildren().contains(storedController.getAnchorPane())){
                         Platform.runLater(()-> {packageBox.getChildren().remove(storedController.getAnchorPane());});
@@ -751,23 +771,34 @@ public class PackageListingController implements Initializable {
     }
 
     private void setUpSearch(){
-        searchComboBox.setItems(searchedItems);
-        new AutoCompleteComboBoxListener<String>(searchComboBox);
+//        searchComboBox.setItems(searchedItems);
+//        new AutoCompleteComboBoxListener<String>(searchComboBox);
+//
+//        searchComboBox.showingProperty().addListener((obs, hidden, showing)->{
+//            String selectedItem = (String) searchComboBox.getSelectionModel().getSelectedItem();
+//            if(hidden && selectedItem != null && gottenModPositions.containsKey(selectedItem)){
+//                searching = true;
+//                ModPackage searchedPackage = modPackages.get(gottenModPositions.get(selectedItem));
+//                packageToExpand = searchedPackage;
+//                int pageNum = pageOf(searchedPackage);
+////                searchedPackage.getStoredController().startAnimation();
+//                desiredVval = calculateModPositionInBox(searchedPackage, pageNum);
+//                if (modPagination.getCurrentPageIndex() != pageNum){
+//                    modPagination.setCurrentPageIndex(pageNum);
+//                }
+//                else{
+//                    packageScrollPane.setVvalue(desiredVval);
+//                    packageToExpand.getStoredController().startAnimation();
+//                }
+//
+//                System.out.println(desiredVval);
+//            }
+//        });
 
-        searchComboBox.showingProperty().addListener((obs, hidden, showing)->{
-            String selectedItem = (String) searchComboBox.getSelectionModel().getSelectedItem();
-            if(hidden && selectedItem != null && gottenModPositions.containsKey(selectedItem)){
-                searching = true;
-                ModPackage searchedPackage = modPackages.get(gottenModPositions.get(selectedItem));
-                int pageNum = pageOf(searchedPackage);
-                desiredVval = calculateModPositionInBox(searchedPackage, pageNum);
-                if (modPagination.getCurrentPageIndex() != pageNum){
-                    modPagination.setCurrentPageIndex(pageNum);
-                }
-                else{
-                    packageScrollPane.setVvalue(desiredVval);
-                }
-                System.out.println(desiredVval);
+        searchComboBox.getEditor().textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                System.out.println("hello");
             }
         });
 
@@ -803,8 +834,15 @@ public class PackageListingController implements Initializable {
 
     private double calculateModPositionInBox(ModPackage modPackage, int pageNum){
         double modAbsolutePosition = gottenModPositions.get(modPackage.getFull_name());
+        System.out.println(modAbsolutePosition);
         double modRelativePosition = modAbsolutePosition - (packagesPerPage * pageNum);
+        System.out.println(modRelativePosition);
         return modRelativePosition / packagesPerPage;
+    }
+
+    public void setLaunchParameter(String launchParameter){
+        this.launchParameter = launchParameter;
+        System.out.println(launchParameter);
     }
 
 }
