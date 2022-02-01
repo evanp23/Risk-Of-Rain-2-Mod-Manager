@@ -1,6 +1,8 @@
 package service;
 
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import mods.PackageVersion;
 import database.Database;
 import mods.ModPackage;
@@ -13,12 +15,12 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class PackageGetter {
-    List<ModPackage> allPackages = new ArrayList<>();
+    ObservableList<ModPackage> allPackages = FXCollections.observableArrayList();
     Database db = new Database();
     Connection conn = db.connect();
 
 
-    public List<ModPackage> loadPackages(Map<String, Integer> gottenModPositions) throws IOException, SQLException, ClassNotFoundException {
+    public ObservableList<ModPackage> loadPackages(Map<String, Integer> gottenModPositions) throws IOException, SQLException, ClassNotFoundException {
         File jsonFile = new File("cached/thunderstorePackages.json");
         JSONArray rootFromWeb = JsonReader.readJsonArrayFromUrl("https://thunderstore.io/api/v1/package/");
         JSONArray rootFromFile = null;
@@ -39,6 +41,7 @@ public class PackageGetter {
         }
 
         for(int i = 0; i < finalRoot.length(); i++){
+            System.out.println(i);
             JSONObject packObj = finalRoot.getJSONObject(i);
 
             //get all values
