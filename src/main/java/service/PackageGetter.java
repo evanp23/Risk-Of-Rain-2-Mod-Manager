@@ -39,9 +39,14 @@ public class PackageGetter {
                 jsonWriter.writeJsonArrayToFile("cached/thunderstorePackages.json", finalRoot);
             }
         }
+        else{
+            System.out.println("reading from web");
+            finalRoot = rootFromWeb;
+            JsonWriter jsonWriter = new JsonWriter();
+            jsonWriter.writeJsonArrayToFile("cached/thunderstorePackages.json", finalRoot);
+        }
 
         for(int i = 0; i < finalRoot.length(); i++){
-            System.out.println(i);
             JSONObject packObj = finalRoot.getJSONObject(i);
 
             //get all values
