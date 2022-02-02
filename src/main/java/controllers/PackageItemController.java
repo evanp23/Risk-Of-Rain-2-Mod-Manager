@@ -267,21 +267,11 @@ public class PackageItemController implements Initializable {
             @Override
             protected Object call() throws Exception {
             ModDownloader modDownloader = new ModDownloader();
-            modDownloader.progressProperty().addListener(new ChangeListener<Number>() {
-                @Override
-                public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                    if((double) t1==1.0){
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                showNewButton(uninstallButton);
-                            }
-                        });
-                    }
-                    System.out.println(t1);
-                    updateProgress((double) t1, 1.0);
-                }
+
+            modDownloader.progressProperty().addListener((obs, oldVal, newVal)->{
+                updateProgress((double)newVal, 1.0);
             });
+
             modDownloader.downloadMod(modsToInstall);
             return null;
             }

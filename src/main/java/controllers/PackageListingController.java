@@ -85,7 +85,6 @@ public class PackageListingController implements Initializable {
     @FXML
     private TextField searchTextField;
 
-
     private final int packagesPerPage = 125;
     private AnchorPane fullModAnchor = new AnchorPane();
     private Task onlineTask;
@@ -103,14 +102,9 @@ public class PackageListingController implements Initializable {
     private Database db = new Database();
     private Connection conn = db.connect();
     private File gameDirectory;
-    private IntegerProperty packageBoxFill;
-    private boolean searching;
     private File bepInDirectory;
-    private double desiredVval;
-    private ModPackage packageToExpand;
     private String launchParameter = null;
-    private ObservableList<Node> filteredNodes = FXCollections.observableArrayList();
-
+    private int lastPageNum = -1;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -119,7 +113,6 @@ public class PackageListingController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        packageBoxFill = new SimpleIntegerProperty();
 
         this.onlineTask = initializeOnlineTask();
         new Thread(onlineTask).start();
@@ -133,20 +126,19 @@ public class PackageListingController implements Initializable {
             AnchorPane.setLeftAnchor(modPagination, 0.0);
             AnchorPane.setRightAnchor(modPagination, 0.0);
 
-            filteredModPackages.setPredicate(installedPackage->installedPackage.isInstalled());
-            int totalPages = (int) (Math.ceil(modPackages.size() * 1.0 / packagesPerPage));
-            modPagination.setPageCount(totalPages);
-            modPagination.setCurrentPageIndex(0);
-            showMods(0);
-            modPagination.setPageFactory(new Callback<Integer, Node>() {
-                @Override
-                public Node call(Integer integer) {
-                    Platform.runLater(()->{
-                        packageScrollPane.setContent(showMods(integer));
-                    });
-                    return packageScrollPane;
-                }
+            filteredModPackages.setPredicate(ModPackage::isInstalled);
+
+            int totalPages = (int) (Math.ceil(filteredModPackages.size() * 1.0 / packagesPerPage));
+            modPagination.setMaxPageIndicatorCount(totalPages);
+            modPagination.setPageFactory((pagenum)->{
+                Platform.runLater(()->{
+                    packageScrollPane.setContent(showMods(pagenum));
+                });
+                return packageScrollPane;
             });
+
+            modPagination.setCurrentPageIndex(0);
+
             if(launchParameter != null){
                 List<String> initialParams = Arrays.asList(launchParameter.split("//"));
                 String arg = initialParams.get(1);
@@ -163,20 +155,33 @@ public class PackageListingController implements Initializable {
         searchTextField.textProperty().addListener((obs, oldVal, newVal)->{
             if(showingInstalledMods && !newVal.isBlank()){
                 filteredModPackages.setPredicate(searchedPackage->
-                        newVal == null || newVal.isEmpty() || searchedPackage.getFull_name().toLowerCase().contains(newVal.toLowerCase())
-                                && searchedPackage.isInstalled());
+                        newVal.isEmpty() || searchedPackage.getFull_name().toLowerCase().contains(newVal.toLowerCase()) && searchedPackage.isInstalled());
+                modPagination.setCurrentPageIndex(0);
+                showMods(0);
             }
             else if(showingInstalledMods){
-                filteredModPackages.setPredicate(searchedPackage-> searchedPackage.isInstalled());
+                filteredModPackages.setPredicate(ModPackage::isInstalled);
+                modPagination.setCurrentPageIndex(0);
+                showMods(0);
             }
             else if(showingOnlineMods && !newVal.isBlank()){
+                System.out.println("heeeere");
+                if(lastPageNum == -1){
+                    lastPageNum = modPagination.getCurrentPageIndex();
+                }
                 filteredModPackages.setPredicate(searchedPackage->
-                        newVal == null || newVal.isEmpty() || searchedPackage.getFull_name().toLowerCase().contains(newVal.toLowerCase()));
+                        newVal.isEmpty() || searchedPackage.getFull_name().toLowerCase().contains(newVal.toLowerCase()));
+                modPagination.setCurrentPageIndex(0);
+                showMods(0);
             }
-            else{
+            else if(showingOnlineMods){
+                System.out.println("ELSE");
                 filteredModPackages.setPredicate(searchedPackage -> modPackages.contains(searchedPackage));
+                modPagination.setCurrentPageIndex(lastPageNum);
+                showMods(lastPageNum);
+                lastPageNum = -1;
             }
-            showMods(modPagination.getCurrentPageIndex());
+
         });
 
         installedModsLabel.setStyle("--fx-background-color=red;");
@@ -187,21 +192,13 @@ public class PackageListingController implements Initializable {
         Image playButtonImage = new Image("images/play.png");
 
         playButton.setImage(playButtonImage);
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                initializeConfirmationWarnDialog();
-            }
+
+        Platform.runLater(this::initializeConfirmationWarnDialog);
+
+
+        sceneAnchorPane.widthProperty().addListener((obs, oldVal, t1)->{
+            listingLine.setEndX(sceneAnchorPane.getWidth());
         });
-        sceneAnchorPane.widthProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                listingLine.setEndX(sceneAnchorPane.getWidth());
-            }
-        });
-
-
-
 
         backButton.setImage(new Image("/images/back.png"));
         backButton.setVisible(false);
@@ -217,10 +214,14 @@ public class PackageListingController implements Initializable {
         int toIndex = Math.min(fromIndex + packagesPerPage, modPackages.size());
 
         int minIndex = Math.min(toIndex, filteredModPackages.size());
+        System.out.println("FILTERD SIZE: " + filteredModPackages.size() + "FULL SIZE: " + modPackages.size());
         SortedList<ModPackage> sortedMods = new SortedList<>(
                 FXCollections.observableArrayList(filteredModPackages.subList(Math.min(fromIndex, minIndex), minIndex)));
 
+
+
         packageBox.getChildren().clear();
+        packageScrollPane.setVvalue(0.0);
 
         for(ModPackage modPackage : sortedMods){
             modPackage.getStoredController().getImage();
@@ -246,70 +247,6 @@ public class PackageListingController implements Initializable {
             packageBox.setMinWidth(packageScrollPane.getWidth() - 15);
         });
 
-//        ObservableList<Node> sortedNodes = FXCollections.observableArrayList();
-//
-//        sortedMods.addListener(new ListChangeListener<ModPackage>() {
-//            @Override
-//            public void onChanged(Change<? extends ModPackage> c) {
-//                System.out.println("sortedListChange");
-//                while(c.next()){
-//                    int start = c.getFrom();
-//                    int end = c.getTo();
-//                    if(c.wasAdded()){
-//                        for(int i = start; i < end; i++){
-//                            packageBox.getChildren().add(sortedMods.get(i).getStoredPackageItemNode());
-//                        }
-//                    }
-//                    if(c.wasRemoved()){
-//                        for(int i = start; i < end; i++){
-//                            packageBox.getChildren().remove(sortedMods.get(i).getStoredPackageItemNode());
-//                        }
-//                    }
-//                }
-//            }
-//        });
-
-        //Bindings.bindContentBidirectional(filteredNodes, packageBox.getChildren());
-
-
-
-//        int startNum = pageNum * packagesPerPage;
-//        int endNum = (pageNum + 1) * packagesPerPage;
-//        int finalSize;
-//
-//        if(showingInstalledMods){
-//            finalSize = installedVersionsSize;
-//        }
-//        else{
-//            finalSize = packagesSize;
-//        }
-//
-//        if(endNum > finalSize){
-//            endNum = finalSize;
-//        }
-//
-//        packageBox.getChildren().clear();
-//
-//        int finalEndNum = endNum;
-//        packageBox.getChildren().clear();
-//        for (int i = startNum; i < finalEndNum; i++) {
-//            ModPackage finalModPackage;
-//            if (showingOnlineMods) {
-//                finalModPackage = modPackages.get(i);
-//            } else {
-//                finalModPackage = installedModPackages.get(i);
-//            }
-//            AnchorPane itemAnchorPane = (AnchorPane) finalModPackage.getStoredController().getAnchorPane();
-//            if(!packageBox.getChildren().contains(itemAnchorPane)){
-//                packageBox.getChildren().add(itemAnchorPane);
-//            }
-//            finalModPackage.getStoredController().getImage();
-//
-//
-//
-//
-//        }
-
         return packageBox;
     }
 
@@ -326,11 +263,9 @@ public class PackageListingController implements Initializable {
                     if(modPackage.isInstalled()) {
                         installedModPackages.add(modPackage);
                     }
-//                    setInstalledPropertyListener(modPackage);
                     drawPackageItem(modPackage);
                     updateProgress(count, modPackages.size());
                 }
-                installedVersionsSize = installedModPackages.size();
                 packagesSize = modPackages.size();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -374,29 +309,25 @@ public class PackageListingController implements Initializable {
             allModsOnlineLabel.setDisable(true);
             showingOnlineMods = true;
             showingInstalledMods = false;
-            int maxPages = (int)Math.ceil((double)packagesSize / (double)packagesPerPage);
-            modPagination.setMaxPageIndicatorCount(maxPages);
+            int totalPages = (int) (Math.ceil(filteredModPackages.size() * 1.0 / packagesPerPage));
+            modPagination.setMaxPageIndicatorCount(totalPages);
             modPagination.setCurrentPageIndex(0);
         }
     }
 
     public void installedLabelOnMouseClicked(){
         System.out.println("INSTALLED LABEL CLICKED");
-        filteredModPackages.setPredicate(installedPackage->installedPackage.isInstalled());
+        filteredModPackages.setPredicate(ModPackage::isInstalled);
         installedModsLabel.setDisable(true);
         allModsOnlineLabel.setDisable(false);
-        packageBox.getChildren().clear();
         showingOnlineMods = false;
         showingInstalledMods = true;
-        int maxPages = (int) Math.ceil((double) installedVersionsSize / (double) packagesPerPage);
-        if(maxPages == 0){
-            maxPages = 1;
+        int totalPages = (int) (Math.ceil(filteredModPackages.size() * 1.0 / packagesPerPage));
+        if(totalPages == 0){
+            totalPages = 1;
         }
-        modPagination.setMaxPageIndicatorCount(maxPages);
+        modPagination.setMaxPageIndicatorCount(totalPages);
         modPagination.setCurrentPageIndex(0);
-//        if (!sceneAnchorPane.getChildren().contains(modPagination)){
-//            showModListPage();
-//        }
     }
 
     public void playButtonOnMouseClicked(){
@@ -551,35 +482,28 @@ public class PackageListingController implements Initializable {
 
         Task removeTask = initializeUninstallTask(modsToRemove, modDownloader);
 
-        List<ModPackage> finalModsToRemove = modsToRemove;
-        confirmWarnDialogController.selectionProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                if(modPackage.isFlaggedForUninstall()) {
-                    int selection = (int) t1;
-                    //CANCEL
-                    if (selection == -1) {
-                        setWarnConfirmUI(false);
-                        for(ModPackage modPackage1 : finalModsToRemove){
-                            modPackage1.flagForUninstall(false);
-                        }
+        confirmWarnDialogController.selectionProperty().addListener((obs, oldVal, t1)->{
+            if(modPackage.isFlaggedForUninstall()) {
+                int selection = (int) t1;
+                //CANCEL
+                if (selection == -1) {
+                    setWarnConfirmUI(false);
+                    for(ModPackage modPackage1 : modsToRemove){
+                        modPackage1.flagForUninstall(false);
                     }
-                    //USER CONFIRMED REMOVE MOD
-                    else if (selection == 1) {
-                        new Thread(removeTask).start();
-                        removeTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
-                            @Override
-                            public void handle(WorkerStateEvent workerStateEvent) {
-                                for (ModPackage removeMod : finalModsToRemove) {
-                                    db.removeMod(removeMod, conn);
-                                    removeMod.flagForUninstall(false);
-                                }
-                                setWarnConfirmUI(false);
-                            }
-                        });
-                    }
-                    confirmWarnDialogController.selectionProperty().set(-2);
                 }
+                //USER CONFIRMED REMOVE MOD
+                else if (selection == 1) {
+                    new Thread(removeTask).start();
+
+                    removeTask.setOnSucceeded((event)->{
+                        for (ModPackage removeMod : modsToRemove) {
+                            removeMod.flagForUninstall(false);
+                        }
+                        setWarnConfirmUI(false);
+                    });
+                }
+                confirmWarnDialogController.selectionProperty().set(-2);
             }
         });
 
@@ -601,70 +525,35 @@ public class PackageListingController implements Initializable {
         confirmWarnDialogController.showUpdateConfirmation(modPackage, allModsToUpdate);
         setWarnConfirmUI(true);
 
-        confirmWarnDialogController.selectionProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                if(modPackage.isFlaggedForUpdate()) {
-                    int selection = (int) t1;
+        confirmWarnDialogController.selectionProperty().addListener((obs, oldVal, t1)->{
+            if(modPackage.isFlaggedForUpdate()) {
+                int selection = (int) t1;
 
-                    //CANCEL
-                    if (selection == -1) {
+                //CANCEL
+                if (selection == -1) {
 
-                        for(ModPackage removeFlag : allModsToUpdate){
-                            removeFlag.flagForUpdate(false);
-                        }
-                        setWarnConfirmUI(false);
+                    for(ModPackage removeFlag : allModsToUpdate){
+                        removeFlag.flagForUpdate(false);
                     }
-                    //USER CONFIRMED UPDATE MOD
-                    else if (selection == 1) {
-                        List<ModPackage> installPackages = new ArrayList<>();
-                        setWarnConfirmUI(false);
-                        try {
-                            modPackage.setInstalled(false);
-                            modPackage.getStoredController().setState(false);
-                            modDownloader.getDownloadUrls(modPackage, "", gottenModPositions, modPackages, installPackages);
-                        } catch (SQLException throwables) {
-                            throwables.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        modPackage.getStoredController().startDownloadTask(installPackages);
-//                        for(ModPackage removeFlag : allModsToUpdate){
-//                            removeFlag.flagForUpdate(false);
-//                        }
-                        setWarnConfirmUI(false);
-                    }
-                    confirmWarnDialogController.selectionProperty().set(-2);
+                    setWarnConfirmUI(false);
                 }
+                //USER CONFIRMED UPDATE MOD
+                else if (selection == 1) {
+                    List<ModPackage> installPackages = new ArrayList<>();
+                    setWarnConfirmUI(false);
+                    try {
+                        modPackage.setInstalled(false);
+                        modPackage.getStoredController().setState(false);
+                        modDownloader.getDownloadUrls(modPackage, "", gottenModPositions, modPackages, installPackages);
+                    } catch (SQLException | IOException throwables) {
+                        throwables.printStackTrace();
+                    }
+                    modPackage.getStoredController().startDownloadTask(installPackages);
+                    setWarnConfirmUI(false);
+                }
+                confirmWarnDialogController.selectionProperty().set(-2);
             }
         });
-
-//        //User confirmed update one mod
-//        confirmWarnDialogController.getConfirmationButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
-//            @Override
-//            public void handle(MouseEvent mouseEvent) {
-//                for(PackageItemController controller : controllers){
-//                    if(controller != null){
-//                        try {
-//                            controller.setState(true);
-//                        } catch (SQLException throwables) {
-//                            throwables.printStackTrace();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                        controller.startDownloadTask(true);
-//                    }
-//                }
-//            }
-//        });
-//
-//        //User canceled mod update
-//        confirmWarnDialogController.getCancelButton().setOnMouseClicked(new EventHandler<MouseEvent>() {
-//            @Override
-//            public void handle(MouseEvent mouseEvent) {
-//                setWarnConfirmUI(false);
-//            }
-//        });
     }
 
     private void setWarnConfirmUI(boolean setShowing){
@@ -677,18 +566,13 @@ public class PackageListingController implements Initializable {
             modPagination.setDisable(true);
             searchTextField.setDisable(true);
 
-            sceneAnchorPane.widthProperty().addListener(new ChangeListener<Number>() {
-                @Override
-                public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                    warnConfirmAnchor.setLayoutX((sceneAnchorPane.getWidth() / 2) - warnConfirmAnchor.getWidth() / 2);
-                }
+            sceneAnchorPane.widthProperty().addListener((obs, oldVal, newVal)->{
+                double val = (double) newVal;
+                warnConfirmAnchor.setLayoutX((val / 2) - warnConfirmAnchor.getWidth() / 2);
             });
 
-            sceneAnchorPane.heightProperty().addListener(new ChangeListener<Number>() {
-                @Override
-                public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                    warnConfirmAnchor.setLayoutY((sceneAnchorPane.getHeight() / 2) - (warnConfirmAnchor.getHeight() / 2));
-                }
+            sceneAnchorPane.heightProperty().addListener((obs, oldVal, newVal)->{
+                warnConfirmAnchor.setLayoutY(((double)newVal / 2) - (warnConfirmAnchor.getHeight() / 2));
             });
         }
         else {
@@ -700,113 +584,54 @@ public class PackageListingController implements Initializable {
 
     }
 
-    private Node drawPackageItem(ModPackage packageToDraw) throws IOException {
+    private void drawPackageItem(ModPackage packageToDraw) throws IOException {
         FXMLLoader loader = new FXMLLoader();
         loader.setLocation(getClass().getResource("/view/packageItem.fxml"));
 
         AnchorPane packageItemAnchorPane = loader.load();
         PackageItemController drawnPackageController = loader.getController();
 
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    drawnPackageController.setData(packageToDraw, installedModPackages, gottenModPositions, modPackages);
-                    drawnPackageController.setState(packageToDraw.isInstalled());
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                } catch (SQLException sqlException) {
-                    sqlException.printStackTrace();
-                }
+        Platform.runLater(()->{
+            try {
+                drawnPackageController.setData(packageToDraw, installedModPackages, gottenModPositions, modPackages);
+                drawnPackageController.setState(packageToDraw.isInstalled());
+            } catch (IOException | SQLException ioException) {
+                ioException.printStackTrace();
             }
         });
 
         packageToDraw.setDrawn(true);
         packageToDraw.setStoredController(drawnPackageController);
 
-        if (packageToDraw.isInstalled()){
-            setUninstallListener(packageToDraw, drawnPackageController.getUninstallButton());
-            setUpdateButtonListener(packageToDraw, drawnPackageController.getUpdateButton());
-        }
-        setDownloadButtonListener(packageToDraw, drawnPackageController.getDownloadButton());
 
-        return packageItemAnchorPane;
+        setUninstallListener(packageToDraw, drawnPackageController.getUninstallButton());
+        setInstalledPropertyListener(packageToDraw);
+        setUpdateButtonListener(packageToDraw, drawnPackageController.getUpdateButton());
+        setDownloadButtonListener(packageToDraw, drawnPackageController.getDownloadButton());
     }
 
     private void setDownloadButtonListener(ModPackage packageToDraw, Button downloadButton) {
         downloadButton.setOnMouseClicked((event -> {
             try {
                 confirmDownload(packageToDraw);
-            } catch (SQLException throwables) {
+            } catch (SQLException | IOException throwables) {
                 throwables.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }));
     }
 
-//    private void setInstalledPropertyListener(ModPackage modPackage){
-//        modPackage.installedProperty().addListener(new ChangeListener<Boolean>() {
-//            @Override
-//            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
-//                System.out.println(modPackage.getName() + ": installedProperty: " + newValue + ": updateFlagged: " + modPackage.isFlaggedForUpdate() );
-//                PackageItemController storedController = modPackage.getStoredController();
-//                if (newValue && !modPackage.isFlaggedForUpdate()) {
-//                    if(showingInstalledMods && !packageBox.getChildren().contains(storedController.getAnchorPane())){
-//                        Platform.runLater(()-> {packageBox.getChildren().add(storedController.getAnchorPane());});
-//                    }
-//                    installedModPackages.add(modPackage);
-//                    installedVersionsSize = installedModPackages.size();
-//                    setUninstallListener(modPackage, storedController.getUninstallButton());
-//                    setUpdateButtonListener(modPackage, storedController.getUpdateButton());
-//                    db.addMod(modPackage, conn);
-//                } else if(!modPackage.isFlaggedForUpdate()){
-//                    if(showingInstalledMods && packageBox.getChildren().contains(storedController.getAnchorPane())){
-//                        Platform.runLater(()-> {packageBox.getChildren().remove(storedController.getAnchorPane());});
-//                    }
-//                    installedModPackages.remove(modPackage);
-//                    installedVersionsSize = installedModPackages.size();
-//                    db.removeMod(modPackage, conn);
-//                }
-//                System.out.println(installedVersionsSize);
-//                Platform.runLater(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        try {
-//                            storedController.setState(newValue);
-//                        } catch (SQLException sqlException) {
-//                            sqlException.printStackTrace();
-//                        } catch (IOException ioException) {
-//                            ioException.printStackTrace();
-//                        }
-//                    }
-//                });
-//
-//            }
-//        });
-//
-//    }
-
     private void setUninstallListener(ModPackage modPackage, Button uninstallButton){
-        uninstallButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                confirmUninstall(modPackage);
-            }
+        uninstallButton.setOnMouseClicked((event)->{
+            confirmUninstall(modPackage);
         });
     }
 
     private void setUpdateButtonListener(ModPackage modPackage, Button updateButton){
-        updateButton.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                try {
-                    confirmUpdate(modPackage, false);
-                } catch (SQLException sqlException) {
-                    sqlException.printStackTrace();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                }
+        updateButton.setOnMouseClicked((event)->{
+            try {
+                confirmUpdate(modPackage, false);
+            } catch (SQLException | IOException sqlException) {
+                sqlException.printStackTrace();
             }
         });
     }
@@ -815,17 +640,17 @@ public class PackageListingController implements Initializable {
         Task removeTask = new Task() {
             @Override
             protected Object call() throws Exception {
-                for(ModPackage uninstall : modsToRemove){
-                    try {
-                        modDownloader.removeModFiles(uninstall.getFull_name(), modDownloader.getBepInDir());
-                        uninstall.setInstalled(false);
-                        uninstall.setInstalledPackageVersion(null);
-                        uninstall.flagForUninstall(false);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+            for(ModPackage uninstall : modsToRemove){
+                try {
+                    modDownloader.removeModFiles(uninstall.getFull_name(), modDownloader.getBepInDir());
+                    uninstall.setInstalled(false);
+                    uninstall.setInstalledPackageVersion(null);
+                    uninstall.flagForUninstall(false);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                return null;
+            }
+            return null;
             }
         };
         return removeTask;
@@ -835,23 +660,37 @@ public class PackageListingController implements Initializable {
         filteredModPackages = new FilteredList<>(modPackages, p -> true);
     }
 
-    private int pageOf(ModPackage modPackage){
-        int modPosition = gottenModPositions.get(modPackage.getFull_name());
-        System.out.println((int) Math.ceil((double)modPosition / (double) packagesPerPage));
-        return (int) ((double)modPosition / (double) packagesPerPage);
-    }
-
-    private double calculateModPositionInBox(ModPackage modPackage, int pageNum){
-        double modAbsolutePosition = gottenModPositions.get(modPackage.getFull_name());
-        System.out.println(modAbsolutePosition);
-        double modRelativePosition = modAbsolutePosition - (packagesPerPage * pageNum);
-        System.out.println(modRelativePosition);
-        return modRelativePosition / packagesPerPage;
-    }
-
     public void setLaunchParameter(String launchParameter){
         this.launchParameter = launchParameter;
         System.out.println(launchParameter);
+    }
+
+    private void setInstalledPropertyListener(ModPackage modPackage){
+        modPackage.installedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+                PackageItemController storedController = modPackage.getStoredController();
+                if (newValue && !modPackage.isFlaggedForUpdate()) {
+                    db.addMod(modPackage, conn);
+                } else if(!modPackage.isFlaggedForUpdate()){;
+                    db.removeMod(modPackage, conn);
+                }
+                if(showingInstalledMods){
+                    filteredModPackages.setPredicate(ModPackage::isInstalled);
+                    Platform.runLater(()-> showMods(modPagination.getCurrentPageIndex()));
+                }
+
+                Platform.runLater(()->{
+                    try {
+                        System.out.println("setting state");
+                        storedController.setState(newValue);
+                    } catch (SQLException | IOException sqlException) {
+                        sqlException.printStackTrace();
+                    }
+                });
+            }
+        });
+
     }
 
 }
