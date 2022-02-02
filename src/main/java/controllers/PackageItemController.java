@@ -157,7 +157,6 @@ public class PackageItemController implements Initializable {
 
             detailsChevron.setRotate(90);
             modInfoAnchor.setVisible(true);
-            System.out.println(itemAnchorPane.getHeight() + ":" + modInfoAnchor.getHeight());
             itemAnchorPane.setMinHeight(199);
             showingInfoAnchor = true;
         }

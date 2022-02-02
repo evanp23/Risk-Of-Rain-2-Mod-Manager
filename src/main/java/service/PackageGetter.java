@@ -29,7 +29,6 @@ public class PackageGetter {
         if(jsonFile.exists()){
             rootFromFile = JsonReader.readJsonArrayFromFile(jsonFile);
             if(rootFromWeb.toString().equals(rootFromFile.toString())){
-                System.out.println("reading from file");
                 finalRoot = rootFromFile;
             }
             else{

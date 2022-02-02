@@ -118,7 +118,6 @@ public class PackageListingController implements Initializable {
         new Thread(onlineTask).start();
 
         onlineTask.setOnSucceeded(event -> {
-            System.out.println("succeeded");
             setUpSearch();
 
             AnchorPane.setTopAnchor(modPagination, 0.0);
@@ -165,7 +164,6 @@ public class PackageListingController implements Initializable {
                 showMods(0);
             }
             else if(showingOnlineMods && !newVal.isBlank()){
-                System.out.println("heeeere");
                 if(lastPageNum == -1){
                     lastPageNum = modPagination.getCurrentPageIndex();
                 }
@@ -175,7 +173,6 @@ public class PackageListingController implements Initializable {
                 showMods(0);
             }
             else if(showingOnlineMods){
-                System.out.println("ELSE");
                 filteredModPackages.setPredicate(searchedPackage -> modPackages.contains(searchedPackage));
                 modPagination.setCurrentPageIndex(lastPageNum);
                 showMods(lastPageNum);
@@ -214,7 +211,6 @@ public class PackageListingController implements Initializable {
         int toIndex = Math.min(fromIndex + packagesPerPage, modPackages.size());
 
         int minIndex = Math.min(toIndex, filteredModPackages.size());
-        System.out.println("FILTERD SIZE: " + filteredModPackages.size() + "FULL SIZE: " + modPackages.size());
         SortedList<ModPackage> sortedMods = new SortedList<>(
                 FXCollections.observableArrayList(filteredModPackages.subList(Math.min(fromIndex, minIndex), minIndex)));
 
@@ -316,7 +312,6 @@ public class PackageListingController implements Initializable {
     }
 
     public void installedLabelOnMouseClicked(){
-        System.out.println("INSTALLED LABEL CLICKED");
         filteredModPackages.setPredicate(ModPackage::isInstalled);
         installedModsLabel.setDisable(true);
         allModsOnlineLabel.setDisable(false);
@@ -415,7 +410,6 @@ public class PackageListingController implements Initializable {
         initializeConfirmationWarnDialog();
         ModDownloader modDownloader = new ModDownloader();
         ComboBox versionBox = modPackage.getStoredController().getVersionBox();
-        System.out.println(versionBox.getSelectionModel().getSelectedItem());
         List<ModPackage> allToInstall = new ArrayList<>();
         modDownloader.getDownloadUrls(modPackage, (String) versionBox.getSelectionModel().getSelectedItem(), gottenModPositions, modPackages, allToInstall);
 
@@ -448,19 +442,14 @@ public class PackageListingController implements Initializable {
 
         ModPackage bepInEx = modPackages.get(gottenModPositions.get("bbepis-BepInExPack"));
         ModPackage r2api = modPackages.get(gottenModPositions.get("tristanmcpherson-R2API"));
-        System.out.println(r2api.getFull_name());
 
 
+        //TODO: installedVersions and its size no longer relevant. Refactor this to work with
+        // filterd list
         if(modPackage.equals(bepInEx) && installedVersionsSize > 1){
-            System.out.println("equals");
-
             installedModPackages.remove(bepInEx);
             installedModPackages.add(bepInEx);
-
-
-            System.out.println(installedModPackages);
             modsToRemove.addAll(installedModPackages);
-            System.out.println("size: " + installedModPackages.size() + ":" + modsToRemove.size());
             for(ModPackage modPackage1 : modsToRemove){
                 modPackage1.flagForUninstall(true);
             }
@@ -662,7 +651,6 @@ public class PackageListingController implements Initializable {
 
     public void setLaunchParameter(String launchParameter){
         this.launchParameter = launchParameter;
-        System.out.println(launchParameter);
     }
 
     private void setInstalledPropertyListener(ModPackage modPackage){
@@ -682,7 +670,6 @@ public class PackageListingController implements Initializable {
 
                 Platform.runLater(()->{
                     try {
-                        System.out.println("setting state");
                         storedController.setState(newValue);
                     } catch (SQLException | IOException sqlException) {
                         sqlException.printStackTrace();

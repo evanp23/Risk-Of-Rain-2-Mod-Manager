@@ -31,7 +31,6 @@ public class ManagerLaunch extends Application {
         String protocolParameter = null;
         if(launchParams.size() != 0){
             protocolParameter = launchParams.get(0);
-            System.out.println(protocolParameter);
         }
 
         FXMLLoader loader = new FXMLLoader();

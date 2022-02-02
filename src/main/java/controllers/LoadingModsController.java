@@ -79,6 +79,5 @@ public class LoadingModsController implements Initializable {
 
     public void setLaunchParameter(String launchParameter){
         this.launchParameter = launchParameter;
-        System.out.println("loading: " + launchParameter);
     }
 }

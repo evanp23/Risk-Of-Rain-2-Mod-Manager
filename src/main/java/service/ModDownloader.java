@@ -90,7 +90,6 @@ public class ModDownloader {
         int progressCount = 0;
         setProgress(0.0);
         for(ModPackage modToInstall : modsToInstall){
-            System.out.println("installing " + modToInstall.getFull_name());
             PackageVersion packageVersionToInstall = modToInstall.getInstalledPackageVersion();
             installAndExtract(new URL(packageVersionToInstall.getDownload_url()), modToInstall);
             progressCount++;
@@ -113,7 +112,6 @@ public class ModDownloader {
             } else {
                 installVersion = modPackage.getVersionsMap().get(version);
             }
-            System.out.println(installVersion.getVersion_number());
             modPackage.setInstalledPackageVersion(installVersion);
             modsToInstall.add(modPackage);
             modPackage.flagForInstall(true);
@@ -210,7 +208,6 @@ public class ModDownloader {
             File thisFile = new File(tempExtractions + "/" + modName);
 
             if (modName.equals("BepInExPack")) {
-                System.out.println("installandextract: " + modName);
                 File bepInTempFolder = new File(tempExtractions + "/BepInExPack/BepInExPack/");
                 installBepInEx(bepInTempFolder, modToInstall.isFlaggedForUpdate());
                 modToInstall.flagForUpdate(false);

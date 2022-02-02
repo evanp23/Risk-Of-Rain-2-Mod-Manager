@@ -136,7 +136,6 @@ public class ConfirmWarnDialogController implements Initializable {
         if(!dependenciesToInstall.isEmpty()){
             confirmationLabel.setText("Required dependencies: ");
             for(ModPackage dependency : dependenciesToInstall){
-                System.out.println(dependency.getFull_name());
                 dependentsBox.getChildren().add(new Label(dependency.getName()));
             }
             dependenciesToInstall.add(packageToInstall);
@@ -155,7 +154,6 @@ public class ConfirmWarnDialogController implements Initializable {
     }
 
     public void onConfirmOKClicked(){
-        System.out.println("hello worooorrld");
         buttonSelection.set(1);
     }
 
