@@ -42,39 +42,36 @@ public class ChooseGameDirectoryController implements Initializable {
                 final DirectoryChooser gameDirChooser = new DirectoryChooser();
                 Stage stg = (Stage) chooseDirAnchorPane.getScene().getWindow();
                 File rorFilePath = gameDirChooser.showDialog(stg);
-                if(rorFilePath != null) {
-                    JSONObject jsonConfigObj = null;
 
+                if(rorFilePath == null) return;
+                JSONObject jsonConfigObj = null;
+                try {
+                    jsonConfigObj = JsonReader.readJsonFromFile("Config/Config.json");
+                    jsonConfigObj.put("directory", rorFilePath.getAbsolutePath());
+                    JsonWriter jsonWriter = new JsonWriter();
+                    jsonWriter.writeJsonToFile("Config/Config.json", jsonConfigObj);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                submitDirectory.setDisable(false);
+                gameDirectoryTextField.setText(rorFilePath.getAbsolutePath());
+
+                submitDirectory.setOnMouseClicked((event)->{
                     try {
-                        jsonConfigObj = JsonReader.readJsonFromFile("Config/Config.json");
-                        jsonConfigObj.put("directory", rorFilePath.getAbsolutePath());
-                        JsonWriter jsonWriter = new JsonWriter();
-                        jsonWriter.writeJsonToFile("Config/Config.json", jsonConfigObj);
+                        FXMLLoader fxmlLoader = new FXMLLoader();
+                        fxmlLoader.setLocation(getClass().getResource("/view/LoadingMods.fxml"));
+                        Parent root = fxmlLoader.load();
+                        LoadingModsController controller = fxmlLoader.getController();
+                        controller.setLaunchParameter(launchParameter);
+                        Stage stage = (Stage)((Node)mouseEvent.getSource()).getScene().getWindow();
+                        Scene scene = new Scene(root);
+                        stage.setScene(scene);
+                        stage.show();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
-                    submitDirectory.setDisable(false);
-                    gameDirectoryTextField.setText(rorFilePath.getAbsolutePath());
-                    submitDirectory.setOnMouseClicked(new EventHandler<MouseEvent>() {
-                        @Override
-                        public void handle(MouseEvent mouseEvent) {
-                            try {
-                                FXMLLoader fxmlLoader = new FXMLLoader();
-                                fxmlLoader.setLocation(getClass().getResource("/view/LoadingMods.fxml"));
-                                Parent root = fxmlLoader.load();
-                                LoadingModsController controller = fxmlLoader.getController();
-                                controller.setLaunchParameter(launchParameter);
-                                Stage stage = (Stage)((Node)mouseEvent.getSource()).getScene().getWindow();
-                                Scene scene = new Scene(root);
-                                stage.setScene(scene);
-                                stage.show();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                }
+                });
             }
         });
     }

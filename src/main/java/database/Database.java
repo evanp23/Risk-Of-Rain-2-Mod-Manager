@@ -118,12 +118,7 @@ public class Database {
             ps.setString(2, name);
 
             ResultSet rs = ps.executeQuery();
-            if(rs.next()){
-                return true;
-            }
-            else{
-                return false;
-            }
+            return rs.next();
 
         }catch(SQLException s){
             s.printStackTrace();
@@ -144,22 +139,16 @@ public class Database {
             String installedVersion = null;
 
             ResultSet rs = ps.executeQuery();
-            if(rs.next()){
+
+            if(!rs.next()) return -1;
+
+            returnVal += 1;
+            installedVersion = rs.getString("version");
+            DefaultArtifactVersion installed = new DefaultArtifactVersion(installedVersion);
+            DefaultArtifactVersion latest = new DefaultArtifactVersion(latestVersion);
+            if(latest.compareTo(installed) > 0){
                 returnVal += 1;
-                installedVersion = rs.getString("version");
-                DefaultArtifactVersion installed = new DefaultArtifactVersion(installedVersion);
-                DefaultArtifactVersion latest = new DefaultArtifactVersion(latestVersion);
-
-                if(latest.compareTo(installed) > 0){
-                    returnVal += 1;
-                }
             }
-            else{
-                return -1;
-            }
-
-
-
         }catch(SQLException s){
             s.printStackTrace();
         }
@@ -186,9 +175,6 @@ public class Database {
 
             installedMods.add(resultToAdd);
         }
-
-
-
         return installedMods;
     }
 }

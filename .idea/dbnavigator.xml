@@ -17,18 +17,14 @@
       <scope value="GLOBAL" />
       <destination value="FILE" />
       <format value="EXCEL" />
-      <charset value="UTF-8" />
+      <charset value="windows-1252" />
     </export-instructions>
   </component>
   <component name="DBNavigator.Project.DatabaseBrowserManager">
     <autoscroll-to-editor value="false" />
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
-    <loaded-nodes>
-      <connection connection-id="565e5398-72f4-44c4-943f-f1e739452e57">
-        <schema name="main" object-types="table, column" />
-      </connection>
-    </loaded-nodes>
+    <loaded-nodes />
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="565e5398-72f4-44c4-943f-f1e739452e57">
@@ -36,9 +32,7 @@
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files>
-      <object connection-id="565e5398-72f4-44c4-943f-f1e739452e57" object-ref="consoles/Connection" />
-    </open-files>
+    <open-files />
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="565e5398-72f4-44c4-943f-f1e739452e57" />
@@ -72,13 +66,13 @@
   </component>
   <component name="DBNavigator.Project.Settings">
     <connections>
-      <connection id="565e5398-72f4-44c4-943f-f1e739452e57" active="true" signed="true">
+      <connection id="565e5398-72f4-44c4-943f-f1e739452e57" active="true">
         <database>
           <name value="Connection" />
           <description value="Main installation configurations" />
           <database-type value="SQLITE" />
           <config-type value="BASIC" />
-          <database-version value="3.3" />
+          <database-version value="3.34" />
           <driver-source value="BUILTIN" />
           <driver-library value="" />
           <driver value="" />

@@ -35,6 +35,6 @@
          </children>
       </AnchorPane>
       <ImageView fx:id="backButton" fitHeight="39.0" fitWidth="41.0" layoutX="6.0" layoutY="9.0" onMouseClicked="#onBackButtonClicked" onMouseEntered="#onMouseEnteredHand" onMouseExited="#onMouseExitedHand" pickOnBounds="true" preserveRatio="true" />
-      <TextField fx:id="searchTextField" layoutX="47.0" layoutY="16.0" />
+      <TextField fx:id="searchTextField" layoutX="14.0" layoutY="13.0" prefHeight="31.0" prefWidth="203.0" />
    </children>
 </AnchorPane>

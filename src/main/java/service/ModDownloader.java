@@ -105,28 +105,33 @@ public class ModDownloader {
     }
 
     public void getDownloadUrls(ModPackage modPackage, String version, Map<String, Integer> modsMap, List<ModPackage> modPackages, List<ModPackage> modsToInstall) throws IOException, SQLException {
-        if ((!modsToInstall.contains(modPackage) && modPackage.getInstalledPackageVersion() == null) || modPackage.isFlaggedForUpdate()) {
-            PackageVersion installVersion;
-            if (version.equals("")) {
-                installVersion = modPackage.getVersions().get(0);
-            } else {
-                installVersion = modPackage.getVersionsMap().get(version);
+        boolean isAdded = modsToInstall.contains(modPackage);
+        boolean hasNoInstalledVersion = modPackage.getInstalledPackageVersion() == null;
+        boolean isUpdating = modPackage.isFlaggedForUpdate();
+
+        if((isAdded && !hasNoInstalledVersion) || (hasNoInstalledVersion && isUpdating)) return;
+
+        PackageVersion installVersion;
+        if (version.equals("")) {
+            installVersion = modPackage.getVersions().get(0);
+        } else {
+            installVersion = modPackage.getVersionsMap().get(version);
+        }
+        modPackage.setInstalledPackageVersion(installVersion);
+        modsToInstall.add(modPackage);
+        modPackage.flagForInstall(true);
+
+        if(!installVersion.hasDependencies()) return;
+
+        for (String dependency : installVersion.getDependencies()) {
+            List<String> fullName = new PackageGetter().parseFullName(dependency);
+            String parsedFullName = fullName.get(1) + "-" + fullName.get(0);
+            int dependencyPosition = -1;
+            if (modsMap.containsKey(parsedFullName)) {
+                dependencyPosition = modsMap.get(parsedFullName);
             }
-            modPackage.setInstalledPackageVersion(installVersion);
-            modsToInstall.add(modPackage);
-            modPackage.flagForInstall(true);
-            if (installVersion.hasDependencies()) {
-                for (String dependency : installVersion.getDependencies()) {
-                    List<String> fullName = new PackageGetter().parseFullName(dependency);
-                    String parsedFullName = fullName.get(1) + "-" + fullName.get(0);
-                    int dependencyPosition = -1;
-                    if (modsMap.containsKey(parsedFullName)) {
-                        dependencyPosition = modsMap.get(parsedFullName);
-                    }
-                    ModPackage desiredModPackage = modPackages.get(dependencyPosition);
-                    getDownloadUrls(desiredModPackage, fullName.get(2), modsMap, modPackages, modsToInstall);
-                }
-            }
+            ModPackage desiredModPackage = modPackages.get(dependencyPosition);
+            getDownloadUrls(desiredModPackage, fullName.get(2), modsMap, modPackages, modsToInstall);
         }
     }
 
@@ -157,35 +162,34 @@ public class ModDownloader {
     }
 
     private void installBepInEx(File bepInTempFolder, boolean flaggedForUpdate) throws IOException {
-            if(bepInTempFolder.isDirectory()){
-                for(File newFile : bepInTempFolder.listFiles()) {
-                    installBepInEx(newFile, true);
+        if(bepInTempFolder.isDirectory()){
+            for(File newFile : bepInTempFolder.listFiles()) {
+                installBepInEx(newFile, true);
+            }
+        }
+        else{
+            String parentFolder = bepInTempFolder.getParentFile().getName();
+            if(parentFolder.equals("BepInExPack")){
+                Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), Paths.get(gamePath.getAbsolutePath() + "/" + bepInTempFolder.getName()), StandardCopyOption.REPLACE_EXISTING);
+            }
+            else if(parentFolder.equals("core") || parentFolder.equals("config")){
+                Path existingPath = Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder + "/" + bepInTempFolder.getName());
+                if(Files.exists(existingPath)){
+                    Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), existingPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+                else{
+                    Path bepInPath = Paths.get(bepInDir.getAbsolutePath());
+                    Path parentFolderPath = Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder);
+                    if(!Files.exists(bepInPath)){
+                        Files.createDirectory(Paths.get(bepInDir.getAbsolutePath()));
+                    }
+                    if(!Files.exists(parentFolderPath)){
+                        Files.createDirectory(Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder));
+                    }
+                    Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), existingPath);
                 }
             }
-            else{
-                String parentFolder = bepInTempFolder.getParentFile().getName();
-                if(parentFolder.equals("BepInExPack")){
-                    Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), Paths.get(gamePath.getAbsolutePath() + "/" + bepInTempFolder.getName()), StandardCopyOption.REPLACE_EXISTING);
-                }
-                else if(parentFolder.equals("core") || parentFolder.equals("config")){
-                    Path existingPath = Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder + "/" + bepInTempFolder.getName());
-                    if(Files.exists(existingPath)){
-                        Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), existingPath, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                    else{
-                        Path bepInPath = Paths.get(bepInDir.getAbsolutePath());
-                        Path parentFolderPath = Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder);
-                        if(!Files.exists(bepInPath)){
-                            Files.createDirectory(Paths.get(bepInDir.getAbsolutePath()));
-                        }
-                        if(!Files.exists(parentFolderPath)){
-                            Files.createDirectory(Paths.get(bepInDir.getAbsolutePath() + "/" + parentFolder));
-                        }
-                        Files.move(Paths.get(bepInTempFolder.getAbsolutePath()), existingPath);
-                    }
-                }
-            }
-//        }
+        }
     }
 
     private void installAndExtract(URL url, ModPackage modToInstall){

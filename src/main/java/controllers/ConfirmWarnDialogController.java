@@ -101,6 +101,7 @@ public class ConfirmWarnDialogController implements Initializable {
             confirmationLabel.setText("Uninstall mod?");
             setBehaviorInParent(false);
         }
+        cancelButton.setVisible(true);
         dependents.add(packageToRemove);
     }
 
@@ -126,6 +127,7 @@ public class ConfirmWarnDialogController implements Initializable {
             confirmationLabel.setText("Update to " + packageToUpdate.getVersions().get(0).getVersion_number() + "?");
             setBehaviorInParent(false);
         }
+        cancelButton.setVisible(true);
 
         allModsNeedingUpdate.add(packageToUpdate);
     }
@@ -146,6 +148,7 @@ public class ConfirmWarnDialogController implements Initializable {
             confirmationLabel.setText("Download mod?");
         }
         confirmationButton.setText("Confirm");
+        cancelButton.setVisible(true);
         dependenciesToInstall.add(packageToInstall);
     }
 
@@ -155,6 +158,15 @@ public class ConfirmWarnDialogController implements Initializable {
 
     public void onConfirmOKClicked(){
         buttonSelection.set(1);
+    }
+
+    public void showWarning(String warningMessage){
+        dependentScrollPane.setVisible(false);
+        modNameLabel.setText("Warning!");
+        confirmationLabel.setText(warningMessage);
+        confirmationButton.setText("OK");
+        cancelButton.setVisible(false);
+        setBehaviorInParent(false);
     }
 
     public IntegerProperty selectionProperty(){

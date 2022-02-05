@@ -194,24 +194,28 @@ public class PackageItemController implements Initializable {
         new Thread(modDownloaderTask).start();
     }
 
+    public Task getModDownloaderTask(){
+        return this.modDownloaderTask;
+    }
+
     public void getImage(){
-        if(!imageIsLoaded) {
-            Task getImageTask = new Task() {
+        if(imageIsLoaded) return;
+
+        Task getImageTask = new Task() {
+            @Override
+            protected Object call() throws Exception {
+            Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
+            Platform.runLater(new Runnable() {
                 @Override
-                protected Object call() throws Exception {
-                Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        packageImage.setImage(iconImage);
-                    }
-                });
-                return null;
+                public void run() {
+                    packageImage.setImage(iconImage);
                 }
-            };
-            new Thread(getImageTask).start();
-            imageIsLoaded = true;
-        }
+            });
+            return null;
+            }
+        };
+        new Thread(getImageTask).start();
+        imageIsLoaded = true;
     }
 
     public void populateVersionBox(boolean installed){
@@ -231,12 +235,12 @@ public class PackageItemController implements Initializable {
                 versionBox.valueProperty().addListener(new ChangeListener() {
                     @Override
                     public void changed(ObservableValue observableValue, Object o, Object t1) {
-                        if(t1 != null) {
-                            if (t1.equals(latestVersion + " (new)")) {
-                                showNewButton(updateButton);
-                            } else if (t1.equals(installedVersion)) {
-                                showNewButton(uninstallButton);
-                            }
+                        if(t1==null) return;;
+
+                        if (t1.equals(latestVersion + " (new)")) {
+                            showNewButton(updateButton);
+                        } else if (t1.equals(installedVersion)) {
+                            showNewButton(uninstallButton);
                         }
                     }
                 });
@@ -308,6 +312,10 @@ public class PackageItemController implements Initializable {
 
     public ComboBox getVersionBox(){
         return this.versionBox;
+    }
+
+    public void setVersionBoxSelection(String selection){
+        versionBox.getSelectionModel().select(selection);
     }
 
 }

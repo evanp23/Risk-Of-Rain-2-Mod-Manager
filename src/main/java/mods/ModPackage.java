@@ -209,10 +209,7 @@ public class ModPackage {
         DefaultArtifactVersion installed = new DefaultArtifactVersion(installedPackageVersion.getVersion_number());
         DefaultArtifactVersion latest = new DefaultArtifactVersion(this.versions.get(0).getVersion_number());
 
-        if(latest.compareTo(installed) > 0){
-            return true;
-        }
-        return false;
+        return latest.compareTo(installed) > 0;
     }
 
 

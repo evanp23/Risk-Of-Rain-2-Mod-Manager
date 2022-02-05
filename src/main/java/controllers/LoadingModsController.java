@@ -47,32 +47,26 @@ public class LoadingModsController implements Initializable {
         Task onlineTask = packageListingController.getOnlineTask();
         loadingProgress.progressProperty().bind(onlineTask.progressProperty());
 
-
-        int installedSize = packageListingController.getInstalledSize();
-        if(installedSize > 30){
-            manyModsLabel.setText(String.format("You have %d mods installed.\nThis could take a while.", installedSize));
-        }
-
         Parent finalRoot = root;
 
         onlineTask.progressProperty().addListener(new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
-                if((double)t1 == 1.0){
-                    Stage stage = (Stage)loadingAnchorPane.getScene().getWindow();
-                    packageListingController.setLaunchParameter(launchParameter);
-                    double width = 1200;
-                    double height = 700;
+                if((double)t1 != 1.0) return;
 
-                    Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
-                    stage.setX((screenBounds.getWidth() - width) / 2);
-                    stage.setY((screenBounds.getHeight() - height) / 2);
-                    stage.setTitle("Risk Of Rain 2 Mod Manager");
-                    Scene scene = new Scene(finalRoot, width, height);
+                Stage stage = (Stage)loadingAnchorPane.getScene().getWindow();
+                packageListingController.setLaunchParameter(launchParameter);
+                double width = 1200;
+                double height = 700;
 
-                    stage.setScene(scene);
-                    stage.show();
-                }
+                Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+                stage.setX((screenBounds.getWidth() - width) / 2);
+                stage.setY((screenBounds.getHeight() - height) / 2);
+                stage.setTitle("Risk Of Rain 2 Mod Manager");
+                Scene scene = new Scene(finalRoot, width, height);
+
+                stage.setScene(scene);
+                stage.show();
             }
         });
     }

@@ -1,5 +1,7 @@
 package mods;
 
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+
 import java.util.List;
 
 public class PackageVersion {
@@ -203,6 +205,13 @@ public class PackageVersion {
 
     public boolean hasDependencies(){
         return this.hasDependencies;
+    }
+
+    public boolean isNewerThan(PackageVersion packageVersion){
+        DefaultArtifactVersion installed = new DefaultArtifactVersion(this.version_number);
+        DefaultArtifactVersion given = new DefaultArtifactVersion(packageVersion.getVersion_number());
+
+        return installed.compareTo(given) > 0;
     }
 
     @Override
