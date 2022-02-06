@@ -35,6 +35,7 @@ public class ModDownloader {
     private String tempZips = "TempZips";
     private String tempExtractions = "TempExtraction";
     private DoubleProperty progressProperty = new SimpleDoubleProperty();
+    private boolean saveZips;
 
     public ModDownloader(){
 
@@ -44,6 +45,18 @@ public class ModDownloader {
             this.gamePath = new File(jsonObject.getString("directory"));
             this.bepInDir = new File(gamePath + "/BepInEx");
             this.bepInPlug = new File(bepInDir + "/plugins");
+            this.saveZips = jsonObject.getBoolean("save_zips");
+
+            File tempZipDir = new File(tempZips);
+            File tempExtrDir = new File(tempExtractions);
+
+            if(!tempExtrDir.exists()){
+                Files.createDirectory(Paths.get(tempExtractions));
+            }
+            if(!tempZipDir.exists()){
+                Files.createDirectory(Paths.get(tempZips));
+            }
+
         }catch(Exception e) {
             e.printStackTrace();
         }
@@ -109,7 +122,7 @@ public class ModDownloader {
         boolean hasNoInstalledVersion = modPackage.getInstalledPackageVersion() == null;
         boolean isUpdating = modPackage.isFlaggedForUpdate();
 
-        if((isAdded && !hasNoInstalledVersion) || (hasNoInstalledVersion && isUpdating)) return;
+        if((isAdded && !hasNoInstalledVersion) || (hasNoInstalledVersion && isUpdating) || modPackage.isInstalled()) return;
 
         PackageVersion installVersion;
         if (version.equals("")) {
@@ -237,10 +250,9 @@ public class ModDownloader {
             readableByteChannel.close();
             zipFile.close();
 
+            if(saveZips) return;
             File deletableZip = new File(tempZips + "/" + modFullname + ".zip");
             deletableZip.delete();
-
-
         }catch (ZipException e) {
             e.printStackTrace();
         } catch (FileNotFoundException e) {

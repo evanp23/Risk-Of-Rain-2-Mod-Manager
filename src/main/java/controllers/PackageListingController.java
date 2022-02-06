@@ -519,6 +519,8 @@ public class PackageListingController implements Initializable {
         ModDownloader modDownloader = new ModDownloader();
         List<ModPackage> allModsToUpdate = new ArrayList<>();
 
+        //TODO: list new dependencies which will be installed with update
+
         FilteredList<ModPackage> installedMods = modPackages.filtered(ModPackage::isInstalled);
         FilteredList<ModPackage> needingUpdate = installedMods.filtered(ModPackage::needsUpdate);
         if(allMods){
