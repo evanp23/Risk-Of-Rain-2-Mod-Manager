@@ -1,13 +1,9 @@
 package controllers;
 
-
-import com.jfoenix.assets.JFoenixResources;
-import com.jfoenix.controls.JFXDialog;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -19,7 +15,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import mods.ModPackage;
@@ -45,7 +40,7 @@ public class PackageItemController implements Initializable {
     @FXML
     private Button downloadButton;
     @FXML
-    private ComboBox versionBox;
+    private ComboBox<String> versionBox;
     @FXML
     private ProgressBar downloadProgress;
     @FXML
@@ -57,14 +52,9 @@ public class PackageItemController implements Initializable {
 
     private Button uninstallButton = new Button();
     private Button updateButton = new Button();
-    private Map<String, Integer> gottenModPositions;
-    private List<ModPackage> modPackages;
-    private List<ModPackage> installedModPackages;
-    private String name;
-    private String author;
     private ModPackage thisModPackage;
     private List<PackageVersion> recentlyInstalledMods;
-    private Task modDownloaderTask;
+    private Task<Integer> modDownloaderTask;
     private boolean showingInfoAnchor = false;
     private boolean imageIsLoaded = false;
 
@@ -107,12 +97,8 @@ public class PackageItemController implements Initializable {
         }));
     }
 
-    public Task getPackageItemTask(){
+    public Task<Integer> getPackageItemTask(){
         return this.modDownloaderTask;
-    }
-
-    private void setRecentlyInstalled(List<PackageVersion> packageVersions){
-        this.recentlyInstalledMods = packageVersions;
     }
 
     public List<PackageVersion> getRecentlyInstalledMods(){
@@ -120,9 +106,6 @@ public class PackageItemController implements Initializable {
     }
 
     public void setData(ModPackage modPackage, List<ModPackage> installedModPackages, Map<String, Integer> allModsMap, List<ModPackage> allOnlineMods) throws IOException, SQLException {
-        this.gottenModPositions = allModsMap;
-        this.modPackages = allOnlineMods;
-        this.installedModPackages = installedModPackages;
         this.thisModPackage = modPackage;
 
         Label descLabel = new Label();
@@ -194,24 +177,26 @@ public class PackageItemController implements Initializable {
         new Thread(modDownloaderTask).start();
     }
 
-    public Task getModDownloaderTask(){
+    public Task<Integer> getModDownloaderTask(){
         return this.modDownloaderTask;
     }
 
     public void getImage(){
         if(imageIsLoaded) return;
 
-        Task getImageTask = new Task() {
+        Task<Integer> getImageTask = new Task<Integer>() {
             @Override
-            protected Object call() throws Exception {
-            Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    packageImage.setImage(iconImage);
-                }
-            });
-            return null;
+            protected Integer call() throws Exception {
+                Image iconImage = new Image(thisModPackage.getVersions().get(0).getIcon());
+
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        packageImage.setImage(iconImage);
+                    }
+                });
+
+                return 1;
             }
         };
         new Thread(getImageTask).start();
@@ -232,14 +217,14 @@ public class PackageItemController implements Initializable {
 
                 versionBox.setStyle("-fx-text-fill: green;");
 
-                versionBox.valueProperty().addListener(new ChangeListener() {
+                versionBox.valueProperty().addListener(new ChangeListener<String>() {
                     @Override
-                    public void changed(ObservableValue observableValue, Object o, Object t1) {
-                        if(t1==null) return;;
+                    public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                        if(newValue==null) return;
 
-                        if (t1.equals(latestVersion + " (new)")) {
+                        if (newValue.equals(latestVersion + " (new)")) {
                             showNewButton(updateButton);
-                        } else if (t1.equals(installedVersion)) {
+                        } else if (newValue.equals(installedVersion)) {
                             showNewButton(uninstallButton);
                         }
                     }
@@ -265,18 +250,18 @@ public class PackageItemController implements Initializable {
         modInfoHbox.getChildren().add(newButton);
     }
 
-    private Task initializeDownloadTask(List<ModPackage> modsToInstall){
-        Task downloadTask = new Task() {
+    private Task<Integer> initializeDownloadTask(List<ModPackage> modsToInstall){
+        Task<Integer> downloadTask = new Task<Integer>() {
             @Override
-            protected Object call() throws Exception {
-            ModDownloader modDownloader = new ModDownloader();
+            protected Integer call() throws Exception {
+                ModDownloader modDownloader = new ModDownloader();
 
-            modDownloader.progressProperty().addListener((obs, oldVal, newVal)->{
-                updateProgress((double)newVal, 1.0);
-            });
+                modDownloader.progressProperty().addListener((obs, oldVal, newVal)->{
+                    updateProgress((double)newVal, 1.0);
+                });
 
-            modDownloader.downloadMod(modsToInstall);
-            return null;
+                modDownloader.downloadMod(modsToInstall);
+                return null;
             }
         };
         return downloadTask;
@@ -291,13 +276,6 @@ public class PackageItemController implements Initializable {
         return this.downloadButton;
     }
 
-    private ModPackage findModPackage(PackageVersion packageVersion){
-        String packageName = packageVersion.getName();
-        String packageAuthor = packageVersion.getNamespace();
-        int modPosition = gottenModPositions.get(packageAuthor + "-" + packageName);
-        return modPackages.get(modPosition);
-    }
-
     public Node getAnchorPane(){
         return this.itemAnchorPane;
     }
@@ -310,7 +288,7 @@ public class PackageItemController implements Initializable {
         itemAnchorPane.getScene().setCursor(Cursor.DEFAULT);
     }
 
-    public ComboBox getVersionBox(){
+    public ComboBox<String> getVersionBox(){
         return this.versionBox;
     }
 

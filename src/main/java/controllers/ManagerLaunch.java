@@ -21,10 +21,8 @@ public class ManagerLaunch extends Application {
         JSONObject configObject = jsonReader.readJsonFromFile("Config/Config.json");
         String gameDir = configObject.getString("directory");
 
-        Database db = new Database();
-        Connection conn = db.connect();
-        db.createTable(conn);
-        conn.close();
+        Database.connect();
+        Database.createTable();
 
         Parameters params = getParameters();
         List<String> launchParams = params.getRaw();

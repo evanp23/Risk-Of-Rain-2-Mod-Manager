@@ -16,8 +16,6 @@ import java.util.*;
 
 public class PackageGetter {
     ObservableList<ModPackage> allPackages = FXCollections.observableArrayList();
-    Database db = new Database();
-    Connection conn = db.connect();
 
 
     public ObservableList<ModPackage> loadPackages(Map<String, Integer> gottenModPositions) throws IOException, SQLException, ClassNotFoundException {
@@ -117,10 +115,10 @@ public class PackageGetter {
             }
 
             PackageVersion installedPackageVersion = null;
-            boolean isInstalled = db.modIsInstalled(pkgName, pkgOwner, conn);
+            boolean isInstalled = Database.modIsInstalled(pkgName, pkgOwner);
             String installedVersionString;
             if(isInstalled){
-                installedVersionString = db.getInstalledVersion(pkgOwner, pkgName, conn);
+                installedVersionString = Database.getInstalledVersion(pkgOwner, pkgName);
                 installedPackageVersion = versionsMap.get(installedVersionString);
             }
 
@@ -187,7 +185,7 @@ public class PackageGetter {
         String webURL = root.getString("website_url");
         boolean isActive = root.getBoolean("is_active");
 
-        int installedInt = db.modIsInstalled(name, namespace, version, conn);
+        int installedInt = Database.modIsInstalled(name, namespace, version);
         boolean installed;
         boolean needsUpdate;
         if(installedInt == 0){

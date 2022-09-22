@@ -4,8 +4,6 @@ package controllers;
 import database.Database;
 import javafx.application.Platform;
 import javafx.beans.Observable;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -29,23 +27,18 @@ import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 import mods.ModPackage;
 import mods.PackageVersion;
-import org.controlsfx.control.tableview2.filter.filtereditor.SouthFilter;
-import org.json.JSONObject;
 import service.*;
 
 
 import java.awt.*;
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.List;
-import java.util.function.Predicate;
 
 public class PackageListingController implements Initializable {
     @FXML
@@ -75,7 +68,7 @@ public class PackageListingController implements Initializable {
 
     private final int packagesPerPage = 125;
     private AnchorPane fullModAnchor = new AnchorPane();
-    private Task onlineTask;
+    private Task<Integer> onlineTask;
     private Map<String, Integer> gottenModPositions = new HashMap<>();
     private ModFullPageController modFullPageController;
     private ConfirmWarnDialogController confirmWarnDialogController;
@@ -84,21 +77,11 @@ public class PackageListingController implements Initializable {
     private boolean showingInstalledMods = true;
     private ObservableList<ModPackage> modPackages;
     private FilteredList<ModPackage> filteredModPackages;
-    private int packagesSize;
-    private Database db = new Database();
-    private Connection conn = db.connect();
-    private File gameDirectory;
-    private File bepInDirectory;
     private String launchParameter = null;
     private int lastPageNum = -1;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        try {
-            getConfig();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         this.onlineTask = initializeOnlineTask();
         new Thread(onlineTask).start();
@@ -164,7 +147,6 @@ public class PackageListingController implements Initializable {
             String modName = allArgs.get(4);
             String version = allArgs.get(5);
             String fullName = namespace + "-" + modName;
-            String dependencyString = fullName + "-" + version;
             ModPackage modPackage = modPackages.get(gottenModPositions.get(fullName));
 
             if(!modPackage.isInstalled()){
@@ -258,45 +240,44 @@ public class PackageListingController implements Initializable {
         return packageBox;
     }
 
-    private Task initializeOnlineTask(){
-        Task onlineTask = new Task() {
+    private Task<Integer> initializeOnlineTask(){
+        Task<Integer> onlineTask = new Task<Integer>() {
             @Override
-            protected Object call() throws Exception {
-            PackageGetter getter = new PackageGetter();
-            try {
-                List<ModPackage> unObsList = getter.loadPackages(gottenModPositions);
-                modPackages = FXCollections.observableArrayList(modPackage ->
-                        new Observable[] {modPackage.installedProperty()});
+            protected Integer call() throws Exception {
+                PackageGetter getter = new PackageGetter();
                 int count = 0;
-                for(ModPackage modPackage : unObsList){
-                    count++;
-                    drawPackageItem(modPackage);
-                    modPackages.add(modPackage);
-                    updateProgress(count, unObsList.size());
+                try {
+                    List<ModPackage> unObsList = getter.loadPackages(gottenModPositions);
+                    modPackages = FXCollections.observableArrayList(modPackage ->
+                            new Observable[] {modPackage.installedProperty()});
+                    
+                    for(ModPackage modPackage : unObsList){
+                        count++;
+                        drawPackageItem(modPackage);
+                        modPackages.add(modPackage);
+                        updateProgress(count, unObsList.size());
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                packagesSize = modPackages.size();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
+                return count;
             }
         };
         return onlineTask;
     }
 
 
-    public Task getOnlineTask(){
+    public Task<Integer> getOnlineTask(){
         return this.onlineTask;
     }
 
 
 
-    private void getConfig() throws IOException {
-        JSONObject configObj = JsonReader.readJsonFromFile("Config/Config.json");
-        String gameDir = configObj.getString("directory");
-        this.gameDirectory = new File(gameDir);
-        this.bepInDirectory = new File(gameDirectory.getAbsolutePath() + "/BepInEx");
-    }
+    // private void getConfig() throws IOException {
+    //     JSONObject configObj = JsonReader.readJsonFromFile("Config/Config.json");
+    //     String gameDir = configObj.getString("directory");
+    //     // this.bepInDirectory = new File(gameDirectory.getAbsolutePath() + "/BepInEx");
+    // }
 
     public void onMouseEnteredHand(){
         allModsOnlineLabel.getScene().setCursor(Cursor.HAND);
@@ -411,17 +392,10 @@ public class PackageListingController implements Initializable {
         showModListPage();
     }
 
-    private ModPackage findModPackage(PackageVersion packageVersion){
-        String packageName = packageVersion.getName();
-        String packageAuthor = packageVersion.getNamespace();
-        int modPosition = gottenModPositions.get(packageAuthor + "-" + packageName);
-        return modPackages.get(modPosition);
-    }
-
     private void confirmDownload(ModPackage modPackage) throws SQLException, IOException {
         initializeConfirmationWarnDialog();
         ModDownloader modDownloader = new ModDownloader();
-        ComboBox versionBox = modPackage.getStoredController().getVersionBox();
+        ComboBox<String> versionBox = modPackage.getStoredController().getVersionBox();
         List<ModPackage> allToInstall = new ArrayList<>();
         modDownloader.getDownloadUrls(modPackage, (String) versionBox.getSelectionModel().getSelectedItem(), gottenModPositions, modPackages, allToInstall);
 
@@ -486,7 +460,7 @@ public class PackageListingController implements Initializable {
 
         setWarnConfirmUI(true);
 
-        Task removeTask = initializeUninstallTask(modsToRemove, modDownloader);
+        Task<Integer> removeTask = initializeUninstallTask(modsToRemove, modDownloader);
 
         confirmWarnDialogController.selectionProperty().addListener((obs, oldVal, t1)->{
             if(!modPackage.isFlaggedForUninstall()) return;
@@ -610,6 +584,7 @@ public class PackageListingController implements Initializable {
     }
 
     private void drawPackageItem(ModPackage packageToDraw) throws IOException {
+        System.out.println("DRAWING: " + packageToDraw.getName());
         FXMLLoader loader = new FXMLLoader();
         loader.setLocation(getClass().getResource("/view/packageItem.fxml"));
 
@@ -663,21 +638,23 @@ public class PackageListingController implements Initializable {
         });
     }
 
-    private Task initializeUninstallTask(List<ModPackage> modsToRemove, ModDownloader modDownloader){
-        Task removeTask = new Task() {
+    private Task<Integer> initializeUninstallTask(List<ModPackage> modsToRemove, ModDownloader modDownloader){
+        Task<Integer> removeTask = new Task<Integer>() {
             @Override
-            protected Object call() throws Exception {
-            for(ModPackage uninstall : modsToRemove){
-                try {
-                    modDownloader.removeModFiles(uninstall.getFull_name(), modDownloader.getBepInDir());
-                    uninstall.setInstalled(false);
-                    uninstall.setInstalledPackageVersion(null);
-                    uninstall.flagForUninstall(false);
-                } catch (IOException e) {
-                    e.printStackTrace();
+            protected Integer call() throws Exception {
+                int count = 0;
+                for(ModPackage uninstall : modsToRemove){
+                    try {
+                        modDownloader.removeModFiles(uninstall.getFull_name(), modDownloader.getBepInDir());
+                        uninstall.setInstalled(false);
+                        uninstall.setInstalledPackageVersion(null);
+                        uninstall.flagForUninstall(false);
+                        count++;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-            return null;
+                return count;
             }
         };
         return removeTask;
@@ -691,9 +668,9 @@ public class PackageListingController implements Initializable {
         modPackage.installedProperty().addListener((obs, oldVal, newVal)->{
             PackageItemController storedController = modPackage.getStoredController();
             if (newVal && !modPackage.isFlaggedForUpdate()) {
-                db.addMod(modPackage, conn);
+                Database.addMod(modPackage);
             } else if(!modPackage.isFlaggedForUpdate()){
-                db.removeMod(modPackage, conn);
+                Database.removeMod(modPackage);
             }
             Platform.runLater(()->{
                 try {

@@ -10,29 +10,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Database {
+    public static Connection connection;
 
-
-
-    public Database(){
-
-    }
-
-    public Connection connect(){
+    public static void connect(){
         File dbFile = new File("DB/config.sqlite");
         String dbUrl = "jdbc:sqlite:" + dbFile.getAbsolutePath();
 
-        Connection conn = null;
         try{
-            conn = DriverManager.getConnection(dbUrl);
-            createTable(conn);
+            Database.connection = DriverManager.getConnection(dbUrl);
+            createTable();
         }catch(SQLException s){
             s.printStackTrace();
         }
-        return conn;
     }
 
 
-    public void createTable(Connection conn){
+    public static void createTable(){
         String createStatement = "CREATE TABLE IF NOT EXISTS installed_mods (\n"
                 +"\tid integer PRIMARY KEY AUTOINCREMENT,\n"
                 +"\tname text NOT NULL,\n"
@@ -42,7 +35,7 @@ public class Database {
                 +");";
 
         try(
-            Statement stmt = conn.createStatement()){
+            Statement stmt = Database.connection.createStatement()){
 
             stmt.execute(createStatement);
         }catch(SQLException s){
@@ -50,7 +43,7 @@ public class Database {
         }
     }
 
-    public void addMod(ModPackage modPackage, Connection conn){
+    public static void addMod(ModPackage modPackage){
         String modName = modPackage.getName();
         String modOwner = modPackage.getOwner();
         PackageVersion installedVersion = modPackage.getInstalledPackageVersion();
@@ -59,7 +52,7 @@ public class Database {
 
         String insertStmt = "INSERT INTO installed_mods(id, name, owner, version, full_name) VALUES (NULL,?,?,?,?);";
 
-        try(PreparedStatement ps = conn.prepareStatement(insertStmt)){
+        try(PreparedStatement ps = connection.prepareStatement(insertStmt)){
 
 
             ps.setString(1, modName);
@@ -74,13 +67,13 @@ public class Database {
         }
     }
 
-    public void removeMod(ModPackage modPackage, Connection conn) {
+    public static void removeMod(ModPackage modPackage) {
         String modName = modPackage.getName();
         String modOwner = modPackage.getOwner();
 
         String selectStatement = "DELETE FROM installed_mods WHERE name = ? AND owner = ?;";
 
-        try(PreparedStatement ps = conn.prepareStatement(selectStatement)) {
+        try(PreparedStatement ps = connection.prepareStatement(selectStatement)) {
 
             ps.setString(1, modName);
             ps.setString(2, modOwner);
@@ -91,10 +84,10 @@ public class Database {
         }
     }
 
-    public String getInstalledVersion(String namespace, String name, Connection conn){
+    public static String getInstalledVersion(String namespace, String name){
         String selectStatement = "SELECT version FROM installed_mods WHERE owner = ? AND name = ?";
         String installedVersion = null;
-        try(PreparedStatement ps = conn.prepareStatement(selectStatement)) {
+        try(PreparedStatement ps = connection.prepareStatement(selectStatement)) {
             ps.setString(1, namespace);
             ps.setString(2, name);
 
@@ -110,10 +103,10 @@ public class Database {
 
     }
 
-    public boolean modIsInstalled(String name, String namespace, Connection conn) throws SQLException {
+    public static boolean modIsInstalled(String name, String namespace) throws SQLException {
         String selectStatement = "SELECT * FROM installed_mods WHERE owner = ? AND name = ?";
 
-        try(PreparedStatement ps = conn.prepareStatement(selectStatement)) {
+        try(PreparedStatement ps = connection.prepareStatement(selectStatement)) {
             ps.setString(1, namespace);
             ps.setString(2, name);
 
@@ -128,12 +121,12 @@ public class Database {
 
     }
 
-    public int modIsInstalled(String name, String namespace, String latestVersion, Connection conn) throws SQLException {
+    public static int modIsInstalled(String name, String namespace, String latestVersion) throws SQLException {
 
         String selectStatement = "SELECT * FROM installed_mods WHERE owner = ? AND name = ?";
         int returnVal = -1;
 
-        try(PreparedStatement ps = conn.prepareStatement(selectStatement)) {
+        try(PreparedStatement ps = connection.prepareStatement(selectStatement)) {
             ps.setString(1, namespace);
             ps.setString(2, name);
             String installedVersion = null;
@@ -157,12 +150,12 @@ public class Database {
 
     }
 
-    public List<List<String>> getInstalledMods(Connection conn) throws SQLException{
+    public static List<List<String>> getInstalledMods() throws SQLException{
 
         List<List<String>> installedMods = new ArrayList<>();
         String selectStatement = "SELECT name, owner, version, full_name FROM installed_mods";
 
-        PreparedStatement ps = conn.prepareStatement(selectStatement);
+        PreparedStatement ps = connection.prepareStatement(selectStatement);
         ResultSet rs = ps.executeQuery();
 
         while(rs.next()){
